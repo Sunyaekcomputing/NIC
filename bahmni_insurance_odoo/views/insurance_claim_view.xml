@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="insurance_claim_form_view" model="ir.ui.view">
+        <field name="name">Insurance Claim Form View</field>
+        <field name="model">insurance.claim</field>
+        <field name="arch" type="xml">
+            <form string="Claims">
+                <sheet>
+                    <group> 
+                        <group>
+                            <field name="claim_code"/>
+                            <field name="partner_id"/>
+                            <field name="nhis_number"/>
+                            <field name="nmc_number"/>
+                            <field name="care_setting"/>
+                            <field name="claim_uuid"/>
+                        </group>
+                        <group>
+                            <field name="claimed_date"/>
+                            <field name="claim_manager_id"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Claim Items">
+                            <field name="insurance_claim_line">
+                                <tree editable="bottom">
+                                    <field name="product_id"/>
+                                    <field name="imis_product_code"/>
+                                    <field name="product_qty"/>
+                                    <field name="price_unit"/>
+                                    <field name="total"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Sale Orders">
+                            <field name="sale_orders"/>
+                        </page>
+                        <page string="Attachments">
+                            <field name="attachment_ids">
+                                <tree editable="bottom">
+                                    <field name="name"/>
+                                    <field name="res_name"/>
+                                    <field name="datas"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="insurance_claim_tree_view" model="ir.ui.view">
+        <field name="name">Insurance Claim Tree View</field>
+        <field name="model">insurance.claim</field>
+        <field name="arch" type="xml">
+            <tree string="Claims">
+                <field name="nhis_number"/>
+                <field name="claimed_date"/>
+                <field name="partner_id"/>
+                <field name="claim_manager_id"/>
+                <field name="care_setting"/>
+            </tree>
+        </field>
+    </record>
+    <record id="action_insurance_claims" model="ir.actions.act_window">
+        <field name="name">Insurace Claims</field>
+        <field name="res_model">insurance.claim</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="insurance_claim_tree_view"></field>
+    </record>
+    <record id="action_submitted_claims" model="ir.actions.act_window">
+        <field name="name">Submitted Claims</field>
+        <field name="res_model">insurance.claim</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="insurance_claim_tree_view"></field>
+    </record>
+    <record id="action_rejected_claims" model="ir.actions.act_window">
+        <field name="name">Rejected Claims</field>
+        <field name="res_model">insurance.claim</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="insurance_claim_tree_view"></field>
+    </record>
+    <record id="action_checked_claims" model="ir.actions.act_window">
+        <field name="name">Checked Claims</field>
+        <field name="res_model">insurance.claim</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="insurance_claim_tree_view"></field>
+    </record>
+    <record id="action_approved_claims" model="ir.actions.act_window">
+        <field name="name">Approved Claims</field>
+        <field name="res_model">insurance.claim</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="insurance_claim_tree_view"></field>
+    </record>
+    <menuitem id="menu_claims" name="Claims" sequence="10" parent="menu_insurance_claims" action="action_insurance_claims"/>
+    <menuitem id="menu_submitted_claims" name="Submitted Claims" sequence="10" parent="menu_insurance_claims" action="action_submitted_claims"/>
+    <menuitem id="menu_rejected_claims" name="Rejected Claims" sequence="10" parent="menu_insurance_claims" action="action_rejected_claims"/>
+    <menuitem id="menu_checked_claims" name="Checked Claims" sequence="10" parent="menu_insurance_claims" action="action_checked_claims"/>
+    <menuitem id="menu_approved_claims" name="Approved Claims" sequence="10" parent="menu_insurance_claims" action="action_approved_claims"/>
+</odoo>

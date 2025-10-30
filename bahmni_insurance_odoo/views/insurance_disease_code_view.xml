@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="insurance_disease_code_form_view" model="ir.ui.view">
+        <field name="name">Insurace Disease Code Form View</field>
+        <field name="model">insurance.disease.code</field>
+        <field name="arch" type="xml">
+            <form string="Insurance Disease Code">
+                <sheet>
+                    <group>
+                        <field name="icd_code"/>
+                        <field name="diagnosis"/>
+                        <field name="is_active"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="insurance_disease_code_tree_view" model="ir.ui.view">
+        <field name="name">Insurace Disease Code Tree View</field>
+        <field name="model">insurance.disease.code</field>
+        <field name="arch" type="xml">
+            <tree string="Insurance Disease Code">
+                <field name="icd_code"/>
+                <field name="diagnosis"/>
+                <field name="is_active"/>
+            </tree>
+        </field>
+    </record>
+    <record id="action_insurance_disease_code" model="ir.actions.act_window">
+        <field name="name">Insurace Disease Code</field>
+        <field name="res_model">insurance.disease.code</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="insurance_disease_code_tree_view"></field>
+    </record>
+    <menuitem id="menu_insurance_disease_code" name="Insurace Disease Code" sequence="12" parent="menu_emr_configuration" action="action_insurance_disease_code"/>
+</odoo>

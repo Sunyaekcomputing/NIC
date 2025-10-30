@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="insurance_config_settings_form_view" model="ir.ui.view">
+        <field name="name">EMR Settings</field>
+        <field name="model">insurance.config.settings</field>
+        <field name="arch" type="xml">
+            <form string="EMR Settings" create="false" edit="true" delete="false">
+                <header>
+                    <button string="Apply" type="object" name="execute" class="oe_highlight"/>
+                    or
+                    <button string="Cancel" type="object" name="cancel" class="oe_link"/>
+                </header>
+                <sheet>
+                <div class="alert alert-success alert-dismissible" invisible="not context.get('show_message', False)">
+                    Connection Succesfull!!!
+                </div>
+                    <separator string="Insurance Connect Configuration"/>
+                    <group string="Bahmni Credentials">
+                        <field name="username" string="Username"/>
+                        <field name="password" string="Password"/>
+                        <field name="base_url"/>
+                    </group>
+                    <div>
+                        <button name="action_test_connection" type="object" class="oe_highlight" string="Test Connection" />
+                    </div>
+                    <group string="OpenMRS Credentials">
+                        <field name="openmrs_username"/>
+                        <field name="openmrs_password"/>
+                        <field name="openmrs_base_url"/>
+                    </group>
+                    <group string="Journal Setup">
+                        <field name="insurance_journal"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_insurance_config_settings" model="ir.actions.act_window">
+        <field name="name">EMR Settings</field>
+        <field name="res_model">insurance.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="insurance_config_settings_form_view"></field>
+    </record>
+    <menuitem id="menu_emr_settings" name="EMR Settings" sequence="10" parent="menu_emr_configuration" action="action_insurance_config_settings"/>
+</odoo>

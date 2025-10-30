@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="payment_type_form_view" model="ir.ui.view">
+        <field name="name">Payment Type Form View</field>
+        <field name="model">payment.types</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="payment_type_key"/>
+                        <field name="payment_type"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="payment_type_tree_view" model="ir.ui.view">
+        <field name="name">Payment Type Tree View</field>
+        <field name="model">payment.types</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="payment_type_key"/>
+                <field name="payment_type"/>            
+            </tree>
+        </field>
+    </record>
+    <record id="action_payment_type" model="ir.actions.act_window">
+        <field name="name">Payment Type</field>        
+        <field name="res_model">payment.types</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="payment_type_tree_view"></field>
+    </record>
+    <menuitem id="menu_payment_types" name="Payment Types" sequence="13" parent="menu_emr_configuration" action="action_payment_type"/>
+</odoo>
