@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="hib_config_settings_form_view" model="ir.ui.view">
+        <field name="name">HIB Config Settings Form View</field>
+        <field name="model">hib.config.settings</field>
+        <field name="arch" type="xml">
+            <form string="HIB Config Settings">
+                <sheet>
+                    <group>
+                        <field name="username"/>
+                        <field name="password" password="True"/>
+                        <field name="remote_user"/>
+                        <field name="active"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="hib_config_settings_tree_view" model="ir.ui.view">
+        <field name="name">HIB Config Settings Tree View</field>
+        <field name="model">hib.config.settings</field>
+        <field name="arch" type="xml">
+            <tree string="HIB Config Settings">
+                <field name="username"/>
+                <field name="password" password="True"/>
+                <field name="remote_user"/>
+                <field name="active"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_hib_config_settings" model="ir.actions.act_window">
+        <field name="name">HIB Config Settings</field>
+        <field name="res_model">hib.config.settings</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="hib_config_settings_tree_view"></field>
+    </record>
+
+    <menuitem id="menu_hib_settings" name="HIB Settings" sequence="10" parent="menu_emr_configuration" action="action_hib_config_settings"/>
+</odoo>

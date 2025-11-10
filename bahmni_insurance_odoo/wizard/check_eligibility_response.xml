@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="insurance_check_eligibility_response_view" model="ir.ui.view">
+        <field name="name">Insurance Check Eligibility Response View</field>
+        <field name="model">insurance.eligibility</field>
+        <field name="arch" type="xml">
+            <form string="Check Eligibility Response">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="insuree_name"/>
+                            <field name="hospital"/>
+                            <field name="copayment_value"/>
+                        </group>
+                        <group>
+                            <field name="nhis_number"/>
+                            <field name="district"/>
+                        </group>
+                    </group>
+                    <group readonly="True">
+                        <field name="eligibility_line_item" string="Detail" readonly="True">
+                            <tree open="false">
+                                <field name="eligibility_balance" />
+                                <field name="category" />
+                                <field name="valid_date" widget="date" options="{'format': 'dd/MM/yyyy'}" />
+                            </tree>
+                        </field>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

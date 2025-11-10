@@ -7,3 +7,7 @@ from . import insurance_disease_code
 from . import product_template
 from . import insurance_config_settings
 from . import stock_lot
+from . import insurance_connect
+from . import res_partner
+from . import hib_config_settings
+from . import res_company

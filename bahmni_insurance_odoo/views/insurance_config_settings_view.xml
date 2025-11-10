@@ -11,13 +11,13 @@
                     <button string="Cancel" type="object" name="cancel" class="oe_link"/>
                 </header>
                 <sheet>
-                <div class="alert alert-success alert-dismissible" invisible="not context.get('show_message', False)">
-                    Connection Succesfull!!!
-                </div>
+                    <div class="alert alert-success alert-dismissible" invisible="not context.get('show_message', False)">
+                        Connection Succesfull!!!
+                    </div>
                     <separator string="Insurance Connect Configuration"/>
                     <group string="Bahmni Credentials">
                         <field name="username" string="Username"/>
-                        <field name="password" string="Password"/>
+                        <field name="password" string="Password" password="True"/>
                         <field name="base_url"/>
                     </group>
                     <div>
@@ -25,7 +25,7 @@
                     </div>
                     <group string="OpenMRS Credentials">
                         <field name="openmrs_username"/>
-                        <field name="openmrs_password"/>
+                        <field name="openmrs_password" password="True"/>
                         <field name="openmrs_base_url"/>
                     </group>
                     <group string="Journal Setup">

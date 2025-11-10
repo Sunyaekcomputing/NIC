@@ -32,7 +32,7 @@ class InsuranceConfigSettings(models.TransientModel):
         res = super().get_values()
         param_obj = self.env['ir.config_parameter'].sudo()
         res.update(
-            insurance_journal = param_obj.get_param('insurance.config.settings.insurance_journal', default='')
+            insurance_journal = param_obj.get_param('insurance.config.settings.insurance_journal', default=''),
         )
 
     def set_values(self):
@@ -45,9 +45,6 @@ class InsuranceConfigSettings(models.TransientModel):
 
     def action_test_connection(self):
         _logger.info("Action Test Connection")
-        username = ""
-        password = ""
-        base_url = ""
         for rec in self:
             username = rec.username
             password = rec.password
@@ -69,7 +66,7 @@ class InsuranceConfigSettings(models.TransientModel):
                     "res_id": rec.id,
                     "target": "main",
                     "context": {"show_message": True}
-                }
+                } 
 
 
     
