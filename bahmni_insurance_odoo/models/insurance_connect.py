@@ -53,7 +53,31 @@ class InsuranceConnect(models.TransientModel):
             return self.response_processor(req)
         except Exception as err:
             _logger.error("\n Processing event threw error: %s", err)
+
+    def _get_capvalidation(self, nhis_number):
+        _logger.info("Inside _get_capvalidation, NHIS Number:%s", nhis_number)
+        insurance_connect_configurations = self.env['insurance.config.settings'].get_values()
+        _logger.info("Insurance Connect Configurations:%s", insurance_connect_configurations)
+
+        try:
+            if not insurance_connect_configurations:
+                raise UserError("Insurance Configurations Not Set")
             
+            url = self.prepare_url(f"/capvalidation/{nhis_number}", insurance_connect_configurations)
+            _logger.info("Url:%s", url)
+            
+            http = urllib3.PoolManager()
+            custom_headers = {'Content-Type': 'application/json'}
+            headers = self.get_header(insurance_connect_configurations)
+            _logger.info("Headers:%s", headers)
+            custom_headers.update(headers)
+            _logger.info("Custom Headers:%s", custom_headers)
+            req = http.request('GET', url, headers=custom_headers)
+            _logger.info("Request:%s", req)
+            return self.response_processor(req)
+        except Exception as err:
+            _logger.error("\n Processing event threw error:%s", err)
+
     def response_processor(self, response):
         _logger.info("********Response********")
         _logger.info("Response Status %s", response.status)

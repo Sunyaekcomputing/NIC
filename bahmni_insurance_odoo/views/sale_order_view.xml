@@ -19,6 +19,7 @@
             </xpath>
             <xpath expr="//field[@name='order_line']/tree/field[@name='name']" position="after">
                 <field name="payment_type"/>
+                <field name="insurance_remain_qty" attrs="{'invisible':[('payment_type', '=', 'cash')]}"/>
             </xpath>
             <xpath expr="//field[@name='order_line']/tree/field[@name='name']" position="attributes">
                 <attribute name="invisible">1</attribute>

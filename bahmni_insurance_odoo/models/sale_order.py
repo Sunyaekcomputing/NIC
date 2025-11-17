@@ -20,6 +20,7 @@ class SaleOrderInherit(models.Model):
     external_visit_uuid = fields.Char(string="External Id", help="This field is used to store visit ID of bahmni api call")
     claim_id = fields.Char(string="Claim Id")
     partner_uuid = fields.Char(string="Customer UUID", store=True, readonly=True)
+    is_apply_copayment_checked = fields.Integer(string="Is Apply Copayment Checked", store=True)
    
     @api.onchange('payment_type')
     def _change_payment_type(self):
@@ -65,10 +66,49 @@ class SaleOrderInherit(models.Model):
             else:
                 pass
 
+    def cap_validation(self):
+        _logger.info("Cap Validation")
+        for rec in self:
+            partner_id = rec.partner_id
+            _logger.info("Partner Id:%s", partner_id)
+            capvalidation_response = self.env['insurance.capvalidation'].get_cap_validation(partner_id)
+            _logger.info("Capvalidation Response:%s", capvalidation_response)
+
+            for line in rec.order_line:
+                if line.product_id:
+                    imis_mapped_row = self.env['insurance.odoo.product.map'].search([
+                        ('odoo_product_id', '=', line.product_id.id),
+                        ('is_active', '=', 'True')
+                    ])
+                    _logger.info("IMIS Mapped Row Id:%s", imis_mapped_row)
+                    if imis_mapped_row:
+                        if capvalidation_response:
+                            _logger.info("Entered into if capvalidation response")
+                            for cap_data in capvalidation_response:
+                                if imis_mapped_row.item_code == cap_data['code']:
+                                    _logger.info("Item Code matched with the IMIS Server")
+                                    line.insurance_remain_qty = cap_data['qty_remain']
+                                    _logger.info("Insurance Remaining Qty:%s", line.insurance_remain_qty)
+                                    break
+                                else:
+                                    _logger.info("Item Code doesn't matched with the IMIS Server") 
+                                    if line.product_id.id == imis_mapped_row.odoo_product_id.id:
+                                        line.insurance_remain_qty = imis_mapped_row.capping_number
+                        else:
+                            _logger.info("Entered into else capvalidaiton response")
+                            if line.product_id.id == imis_mapped_row.odoo_product_id.id:
+                                line.insurance_remain_qty = imis_mapped_row.capping_number
+                    else:
+                        _logger.info(f"No Product Mapping Found For {line.product_id}")
+                else:
+                    _logger.info("No product added in the sale order line")
+
     def check_eligibility(self):
         _logger.info("Check Eligibility")
+        self.cap_validation()
         for rec in self:
             if rec.company_id.copayment == "yes":
+                self.is_apply_copayment_checked = 1
                 if rec.nhis_number:
                     partner_id = rec.partner_id
                     _logger.info("Partner Id:%s", partner_id)
@@ -146,6 +186,94 @@ class SaleOrderInherit(models.Model):
             self.action_done()
         
         if self.payment_type == "insurance":
+            if self.nhis_number:
+                if self.is_apply_copayment_checked == 1:
+                    _logger.info("Apply Copayment Button Clicked:%s", self.is_apply_copayment_checked)
+                    for line in self.order_line:
+                        if line.product_id:
+                            _logger.info("Product Name:%s", line.product_id.name)
+                            imis_mapped_row = self.env['insurance.odoo.product.map'].search([
+                                ('odoo_product_id', '=', line.product_id.id),
+                                ('is_active', '=', 't')
+                            ])
+                            _logger.info("IMIS Mapped Row Id:%s", imis_mapped_row)
+                            if imis_mapped_row:
+                                if imis_mapped_row.cap_validation == "yes":
+                                    _logger.info("Cap Validation:%s", imis_mapped_row.cap_validation)
+                                    if line.product_id.detailed_type == "product":
+                                        _logger.info("****Stockable Product****")
+                                        if line.insurance_remain_qty > 0:
+                                            if line.product_uom_qty > line.insurance_remain_qty:
+                                                _logger.info("Only %s quantity left for the product '%s'"%(line.insurance_remain_qty, line.product_id.name))
+                                                raise ValidationError("Only %s quantity left for the product '%s'"%(line.insurance_remain_qty, line.product_id.name))
+                                            else:
+                                                _logger.info("Stockable Produce Else Running")
+                                                pass
+                                        else:
+                                            _logger.info("%s quantity left for the product '%s'"%(line.insurance_remain_qty, line.product_id.name))
+                                            raise ValidationError("%s quantity left for the product '%s'"%(line.insurance_remain_qty, line.product_id.name))
+                                    else:
+                                        _logger.info("****Service****")
+                                        if line.insurance_remain_qty > 0:
+                                            if line.product_uom_qty > line.insurance_remain_qty:
+                                                _logger.info("Only %s quantity left for the test '%s'"%(line.insurance_remain_qty, line.product_id.name))
+                                                raise ValidationError("Only %s quantity left for the test '%s'"%(line.insurance_remain_qty, line.product_id.name))
+                                            else:
+                                                _logger.info("Service Else Running")
+                                                pass
+                                        else:
+                                            raise ValidationError("%s quantity left for the test '%s'"%(line.insurance_remain_qty, line.product_id.name))
+                                elif imis_mapped_row.cap_validation == "no":
+                                    _logger.info("Cap Validation:%s", imis_mapped_row.cap_validation)
+                                    if line.product_id.detailed_type == "product":
+                                        _logger.info("****Stockable Product****")
+                                        if line.product_uom_qty > line.insurance_remain_qty:
+                                            _logger.info("The capping quantity for the product '%s' is only %s"%(line.product_id.name, line.insurance_remain_qty))
+                                            raise ValidationError("The capping quantity for the product '%s' is only %s"%(line.product_id.name, line.insurance_remain_qty))
+                                        else:
+                                            _logger.info("Stockable Produce Else Running")
+                                            pass 
+                                    else:
+                                        _logger.info("****Service****")
+                                        if line.product_uom_qty > line.insurance_remain_qty:
+                                            _logger.info("The capping quantity for the test '%s' is only %s"%(line.product_id.name, line.insurance_remain_qty))
+                                            raise ValidationError("The capping quantity for the test '%s' is only %s"%(line.product_id.name, line.insurance_remain_qty))
+                                        else:
+                                            _logger.info("Service Else Running")
+                                            pass  
+                                elif imis_mapped_row.cap_validation == "tmc":
+                                    _logger.info("Cap Validation:%s", imis_mapped_row.cap_validation)
+                                    if line.product_id.detailed_type == "service":
+                                        _logger.info("****Service****")
+                                        if line.product_uom_qty > line.insurance_remain_qty:
+                                            _logger.info("Only %s quantity left for the test '%s'"%(line.insurance_remain_qty, line.product_id.name))
+                                            raise ValidationError("Only %s quantity left for the test '%s'"%(line.insurance_remain_qty, line.product_id.name))
+                                        else:
+                                            _logger.info("Service Else Running")
+                                            pass
+                                elif imis_mapped_row.cap_validation == "oyc":
+                                    _logger.info("Cap Validation:%s", imis_mapped_row.cap_validation)
+                                    if line.product_id.detailed_type == "service":
+                                        _logger.info("****Service****")
+                                        if line.product_uom_qty > line.insurance_remain_qty:
+                                            _logger.info("Only %s quantity left for the test '%s'"%(line.insurance_remain_qty, line.product_id.name))
+                                            raise ValidationError("Only %s quantity left for the test '%s'"%(line.insurance_remain_qty, line.product_id.name))
+                                        else:
+                                            _logger.info("Service Else Running")
+                                            pass
+                                else:
+                                    _logger.info("Cap Validation:%s", imis_mapped_row.cap_validation)
+                                    pass
+                            else:
+                                raise UserError("No Product Mapping Found For"%(line.product_id.name))
+                        else:
+                            raise UserError("Product Not Added !!")
+                else:
+                    _logger.info("Apply Copayment Button must be clicked when the payment type is insurance")
+                    raise UserError("Apply Copayment Button must be clicked when the payment type is insurance")
+            else:
+                _logger.info("NHIS Number cannot be Null!")
+                raise UserError("NHIS Number cannot be Null!")
             for order in self:
                 _logger.info("Sale Order Id:%s", order)
                 self.action_invoice_create_commons(order)
@@ -160,8 +288,6 @@ class SaleOrderInherit(models.Model):
             _logger.info("Sale Order Id:%s", order)
             self.env['insurance.claim']._create_claim(order)
 
-    
-            
 class SaleOrderLineInherit(models.Model):
     _inherit = 'sale.order.line'
     _description = 'Sale Order Line Inherit'
@@ -171,7 +297,8 @@ class SaleOrderLineInherit(models.Model):
         ('insurance', 'INSURANCE'),
         ('free', 'FREE')
     ], string="Payment Type", related="order_id.payment_type", readonly=False)
-                    
+
+    insurance_remain_qty = fields.Integer(string="Ins Rem Qty", readonly=True)
     # @api.constrains('lot_id')
     # def _check_lot(self):
     #     for rec in self:

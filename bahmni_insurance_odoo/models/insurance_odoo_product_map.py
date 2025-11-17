@@ -13,7 +13,7 @@ class InsuranceOdooProductMap(models.Model):
     cap_validation = fields.Selection([
         ('yes', 'Yes'),
         ('no', 'No'),
-        ('tms', 'Three Months Capping'),
+        ('tmc', 'Three Months Capping'),
         ('oyc', 'One Year Capping')
     ], string="Medicine For Cap Validation")
     capping_number = fields.Integer(string="Capping Number(Per Visit)")
