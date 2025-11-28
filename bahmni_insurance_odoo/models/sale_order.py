@@ -1,8 +1,6 @@
-from odoo import api, models, fields
+from odoo import api, models, fields, _
 from odoo.exceptions import ValidationError, UserError
 import odoo.addons.decimal_precision as dp
-import requests
-import base64
 import logging
 _logger = logging.getLogger(__name__)
 
@@ -12,16 +10,22 @@ class SaleOrderInherit(models.Model):
 
     nhis_number = fields.Char(string="NHIS Number")
     insurance_status = fields.Boolean(string="Insurance Status", default=False)
-    payment_type = fields.Selection([
-        ('cash', 'CASH'),
-        ('insurance', 'INSURANCE'),
-        ('free', 'FREE')
-    ], string="Payment Type", default="cash")
+    payment_type = fields.Selection(selection="_get_payment_type_data", string="Payment Type", default="cash")
     external_visit_uuid = fields.Char(string="External Id", help="This field is used to store visit ID of bahmni api call")
     claim_id = fields.Char(string="Claim Id")
     partner_uuid = fields.Char(string="Customer UUID", store=True, readonly=True)
     is_apply_copayment_checked = fields.Integer(string="Is Apply Copayment Checked", store=True)
-   
+    
+    @api.model
+    def _get_payment_type_data(self):
+        returnData = []
+        payment_type_ids = self.env['payment.types'].search([])
+        if payment_type_ids:
+            for pt in payment_type_ids:
+                data = payment_type_ids.browse(pt.id)
+                returnData.append((data.key, data.value))
+        return returnData
+
     @api.onchange('payment_type')
     def _change_payment_type(self):
         for sale_order in self:
@@ -34,7 +38,7 @@ class SaleOrderInherit(models.Model):
                     if discount_head_id:
                         sale_order.disc_acc_id = discount_head_id
                     else:
-                        raise ValidationError("Discount head not found!!")
+                        raise UserError("Discount head not found!!")
                 for sale_order_line in sale_order.order_line:
                     product_template = sale_order.env['product.template'].search([
                         ('id', '=', sale_order_line.product_template_id.id)
@@ -42,7 +46,7 @@ class SaleOrderInherit(models.Model):
                     if product_template:
                         sale_order_line.price_unit = product_template.list_price
                     else:
-                        raise ValidationError("Product Not Mapped!! Please Contact Admin.")
+                        raise UserError("Product Not Mapped!! Please Contact Admin.")
             elif sale_order.payment_type == "insurance":
                 if sale_order.discount_type == "percentage" or sale_order.discount_type == "fixed":
                     _logger.info(f"Payment Type: {sale_order.payment_type}")
@@ -52,7 +56,7 @@ class SaleOrderInherit(models.Model):
                     if discount_head_id:
                         sale_order.disc_acc_id = discount_head_id
                     else:
-                        raise ValidationError("Discount head not found!!")
+                        raise UserError("Discount head not found!!")
                 for sale_order_line in sale_order.order_line:
                     if sale_order_line.product_template_id:
                         _logger.info("Product Template Id---->%s", sale_order_line.product_template_id) 
@@ -62,7 +66,7 @@ class SaleOrderInherit(models.Model):
                         if insurance_odoo:
                             sale_order_line.price_unit = insurance_odoo.insurance_product_price 
                         else:
-                            raise ValidationError("Product Not Mapped!! Please Contact Admin.")
+                            raise UserError("Product Not Mapped!! Please Contact Admin.")
             else:
                 pass
 
@@ -147,7 +151,7 @@ class SaleOrderInherit(models.Model):
                 company_name = rec.company_id.name
                 _logger.info(f"Copayment Not Applied for {company_name}")
                 raise UserError("Copayment Not Applied for %s", company_name)
-  
+            
     def action_confirm(self):
         _logger.info("#####Action Confrim Inherit#####")
         """ Confirm the given quotation(s) and set their confirmation date.
@@ -180,10 +184,6 @@ class SaleOrderInherit(models.Model):
         context.pop('default_name', None)
 
         self.with_context(context)._action_confirm()
-
-        if self[:1].create_uid.has_group('sale.group_auto_done_setting'):
-            # Public user can confirm SO, so we check the group on any record creator.
-            self.action_done()
         
         if self.payment_type == "insurance":
             if self.nhis_number:
@@ -274,14 +274,31 @@ class SaleOrderInherit(models.Model):
             else:
                 _logger.info("NHIS Number cannot be Null!")
                 raise UserError("NHIS Number cannot be Null!")
-            for order in self:
-                _logger.info("Sale Order Id:%s", order)
-                self.action_invoice_create_commons(order)
         else:
-            pass
+            _logger.info("#####Else#####")
+            _logger.info("Payment Type:%s", self.payment_type)
+            self.is_apply_copayment_checked = 1
+
+        if self[:1].create_uid.has_group('sale.group_auto_done_setting'):
+            # Public user can confirm SO, so we check the group on any record creator.
+            self.action_done()
+
+        # Getting Id for Insurance Journal
+        # insurance_connect_configurations = self.env['insurance.config.settings'].get_values()
+        # _logger.info("Insurance Connect Configurations:%s", insurance_connect_configurations)
+        # insurance_journal_name = insurance_connect_configurations['insurance_journal']
+        # _logger.info("Insurance Journal Name:%s", insurance_journal_name)
+        # insurance_journal_id = self.env['account.account'].search([
+        #     ('name', 'ilike', insurance_journal_name)
+        # ])
+        # _logger.info("Insurance Journal Account Id:%s", insurance_journal_id)
+
+        for order in self:
+            _logger.info("Sale Order Id:%s", order)
+            self.action_invoice_create_commons(order)
 
         return True
-
+    
     def action_invoice_create_commons(self, order):
         _logger.info("Inside action invoice create commons overwritten")
         for order in self:
@@ -292,13 +309,19 @@ class SaleOrderLineInherit(models.Model):
     _inherit = 'sale.order.line'
     _description = 'Sale Order Line Inherit'
     
-    payment_type = fields.Selection([
-        ('cash', 'CASH'),
-        ('insurance', 'INSURANCE'),
-        ('free', 'FREE')
-    ], string="Payment Type", related="order_id.payment_type", readonly=False)
+    payment_type = fields.Selection(selection="_get_payment_type_data", string="Payment Type", related="order_id.payment_type", readonly=False)
 
     insurance_remain_qty = fields.Integer(string="Ins Rem Qty", readonly=True)
+
+    @api.model
+    def _get_payment_type_data(self):
+        returnData = []
+        payment_type_ids = self.env['payment.types'].search([])
+        if payment_type_ids:
+            for pt in payment_type_ids:
+                data = payment_type_ids.browse(pt.id)
+                returnData.append((data.key, data.value))
+        return returnData
     # @api.constrains('lot_id')
     # def _check_lot(self):
     #     for rec in self:

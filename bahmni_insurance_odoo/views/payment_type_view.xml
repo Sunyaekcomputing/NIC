@@ -7,8 +7,8 @@
             <form>
                 <sheet>
                     <group>
-                        <field name="payment_type_key"/>
-                        <field name="payment_type"/>
+                        <field name="key"/>
+                        <field name="value"/>
                     </group>
                 </sheet>
             </form>
@@ -19,8 +19,8 @@
         <field name="model">payment.types</field>
         <field name="arch" type="xml">
             <tree>
-                <field name="payment_type_key"/>
-                <field name="payment_type"/>            
+                <field name="key"/>
+                <field name="value"/>            
             </tree>
         </field>
     </record>

@@ -42,6 +42,7 @@ class InsuranceConnect(models.TransientModel):
             url = self.prepare_url("/check/eligibility/%s", insurance_connect_configurations)
             url = url%(nhis_number)
             _logger.info("Url:%s", url)
+            
             http = urllib3.PoolManager()
             custom_headers = {'Content-Type': 'application/json'}
             headers = self.get_header(insurance_connect_configurations)
@@ -56,10 +57,10 @@ class InsuranceConnect(models.TransientModel):
 
     def _get_capvalidation(self, nhis_number):
         _logger.info("Inside _get_capvalidation, NHIS Number:%s", nhis_number)
-        insurance_connect_configurations = self.env['insurance.config.settings'].get_values()
-        _logger.info("Insurance Connect Configurations:%s", insurance_connect_configurations)
-
         try:
+            insurance_connect_configurations = self.env['insurance.config.settings'].get_values()
+            _logger.info("Insurance Connect Configurations:%s", insurance_connect_configurations)
+            
             if not insurance_connect_configurations:
                 raise UserError("Insurance Configurations Not Set")
             

@@ -23,18 +23,11 @@ class InsuranceConfigSettings(models.TransientModel):
         res.update(
             username = param_obj.get_param('insurance.config.settings.username', default=''),
             password = param_obj.get_param('insurance.config.settings.password', default=''),
-            base_url = param_obj.get_param('insurance.config.settings.base_url', default='')
+            base_url = param_obj.get_param('insurance.config.settings.base_url', default=''),
+            insurance_journal = param_obj.get_param('insurance.config.settings.insurance_journal', default=''),
         )
         return res
     
-    @api.model
-    def get_insurance_journal(self):
-        res = super().get_values()
-        param_obj = self.env['ir.config_parameter'].sudo()
-        res.update(
-            insurance_journal = param_obj.get_param('insurance.config.settings.insurance_journal', default=''),
-        )
-
     def set_values(self):
         super().set_values()
         param_obj = self.env['ir.config_parameter'].sudo()

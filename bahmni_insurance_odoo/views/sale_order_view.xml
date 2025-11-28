@@ -6,7 +6,7 @@
         <field name="inherit_id" ref="sale.view_order_form"></field>
         <field name="arch" type="xml">
             <xpath expr="//button[@name='action_cancel']" position="after">
-                <button name="check_eligibility" type="object" string="Apply Copayment" class="oe_highlight" attrs="{'invisible': [('payment_type', '!=', 'insurance')]}"/>
+                <button name="check_eligibility" type="object" string="Apply Copayment" class="oe_highlight" attrs="{'invisible': ['|', ('payment_type', '!=', 'insurance'), ('state', '!=', 'draft')]}"/>
             </xpath>
             <xpath expr="//field[@name='partner_id']" position="after">
                 <field name="nhis_number"/>
