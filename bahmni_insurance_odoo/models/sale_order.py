@@ -292,11 +292,42 @@ class SaleOrderInherit(models.Model):
         #     ('name', 'ilike', insurance_journal_name)
         # ])
         # _logger.info("Insurance Journal Account Id:%s", insurance_journal_id)
+        for rec in self:
+            _logger.info("Sale Order Id:%s", rec)
+            payment_type = rec.payment_type
+            if payment_type:
+                _logger.info("Payment Type:%s", payment_type)
+                journal_id = rec.env['payment.journal.mapping'].search([
+                    ('payment_type', '=', payment_type)
+                ]).journal_id.id
+                _logger.info("Journal Id:%s", journal_id)
 
-        for order in self:
-            _logger.info("Sale Order Id:%s", order)
-            self.action_invoice_create_commons(order)
+                if not journal_id:
+                    raise UserError("Please define a journal for this company")
+            else:
+                raise UserError("Please add a payment type")
 
+            if bool(rec.env['ir.config_parameter'].sudo().get_param('bahmni_sale.is_invoice_automated')):
+                create_invoices = rec._create_invoices()
+                _logger.info("****Created Invoices*****")
+                _logger.info("Account Invoice Id:%s", create_invoices)
+                self.action_invoice_create_commons(rec)
+                if rec.env.user.has_group('bahmni_sale.group_redirect_to_payments_on_sale_confirm'):
+                    _logger.info("Inside bahmni_sale.group_redirect_to_payments_on_sale_confirm")
+                    action = {
+                        'name': _('Payments'),
+                        'type': 'ir.actions.act_window',
+                        'res_model': 'account.payment.register',
+                        'context': {
+                            'active_model': 'account.move',
+                            'active_ids': create_invoices.id,
+                            'default_journal_id': journal_id,
+                        },
+                        'view_mode': 'form',
+                        'target': 'new'
+                    }
+                    _logger.info("Action:%s", action)
+                    return action
         return True
     
     def action_invoice_create_commons(self, order):

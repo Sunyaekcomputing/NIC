@@ -112,16 +112,16 @@ class InsuranceClaim(models.Model):
                 _logger.info("No Claim Line Item Present")
                 raise ValidationError("No Claim Line Item Present")
             
-        #     # To generate pdf report in the ir.attachment model
-        #     account_move_id = self.env['account.move'].search([
-        #         ('invoice_origin', '=', sale_order.name)
-        #     ])
-        #     _logger.info("Sale Order Name:%s", sale_order.name)
-        #     _logger.info("Account Move Id:%s", account_move_id)
-        #     claim_id = claim_in_db
-        #     _logger.info("Claim Id:%s", claim_id)
-        #     self.env['account.move'].action_generate_attachment(account_move_id, claim_id)
-        # else:
+            # To generate pdf report in the ir.attachment model
+            _logger.info("Sale Order Name:%s", sale_order.name)
+            account_move_id = self.env['account.move'].search([
+                ('invoice_origin', '=', sale_order.name)
+            ])
+            _logger.info("Account Move Id:%s", account_move_id)
+            claim_id = claim_in_db
+            _logger.info("Claim Id:%s", claim_id)
+            # self.env['account.move'].action_generate_attachment(account_move_id, claim_id)
+        else:
             _logger.info("Payment Type:%s", sale_order.payment_type)
        
     def _create_claim_line(self, claim, sale_order):

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="account_payment_register_inherit_form_view" model="ir.ui.view">
+        <field name="name">Account Payment Register Inherit Form View</field>
+        <field name="model">account.payment.register</field>
+        <field name="inherit_id" ref="account.view_account_payment_register_form"></field>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='bank_reference']" position="attributes">
+                <attribute name="attrs">{'invisible': [('journal_id', '!=', 7)]}</attribute>
+            </xpath>
+            <xpath expr="//field[@name='cheque_reference']" position="attributes">
+                <attribute name="attrs">{'invisible': [('journal_id', '!=', 7)]}</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>
