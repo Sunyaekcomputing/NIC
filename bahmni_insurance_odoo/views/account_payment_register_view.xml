@@ -5,6 +5,9 @@
         <field name="model">account.payment.register</field>
         <field name="inherit_id" ref="account.view_account_payment_register_form"></field>
         <field name="arch" type="xml">
+            <xpath expr="//field[@name='effective_date']" position="attributes">
+                <attribute name="attrs">{'invisible': [('journal_id', '!=', 7)]}</attribute>
+            </xpath>
             <xpath expr="//field[@name='bank_reference']" position="attributes">
                 <attribute name="attrs">{'invisible': [('journal_id', '!=', 7)]}</attribute>
             </xpath>

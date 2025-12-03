@@ -6,6 +6,7 @@ _logger = logging.getLogger(__name__)
 class InsuranceClaim(models.Model):
     _name = 'insurance.claim'
     _description = 'Insurance Claim Module'
+    _order = "id desc"
 
     claim_code = fields.Char(string="Claim Code")
     claim_manager_id = fields.Many2one('res.users', string="Claims Manager", tracking=True)
