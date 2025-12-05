@@ -24,7 +24,6 @@
             <xpath expr="//field[@name='order_line']/tree/field[@name='name']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
-            
            <xpath expr="//group[@name='note_group']" position="replace">
                 <group name="note_group" col="6">
                     <group name="discount" colspan="2">   

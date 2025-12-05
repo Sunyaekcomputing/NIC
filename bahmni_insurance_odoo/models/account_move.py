@@ -25,27 +25,53 @@ class AccountMoveInherit(models.Model):
         :return: An action opening the account.payment.register wizard.
         '''
         for rec in self:
-            payment_type = rec.move_payment_type
-            if payment_type:
-                _logger.info("Payment Type:%s", payment_type)
+            if rec.move_type == "out_invoice" or rec.move_type == "out_refund":
+                _logger.info("If running")
+                _logger.info("Move Type:%s", rec.move_type)
+                payment_type = rec.move_payment_type
+                if payment_type:
+                    _logger.info("Payment Type:%s", payment_type)
+                    journal_id = rec.env['payment.journal.mapping'].search([
+                        ('payment_type', '=', payment_type)
+                    ]).journal_id.id
+                    _logger.info("Journal Id:%s", journal_id)
+                    if not journal_id:
+                        raise UserError("Please define a journal for this company")
+            
+                    return {
+                        'name': _('Register Payment'),
+                        'res_model': 'account.payment.register',
+                        'view_mode': 'form',
+                        'context': {
+                            'active_model': 'account.move',
+                            'active_ids': self.ids,
+                            'default_journal_id': journal_id
+                        },
+                        'target': 'new',
+                        'type': 'ir.actions.act_window',
+                    }
+            else:
+                _logger.info("Else Running")
+                _logger.info("Move Type:%s", rec.move_type)
                 journal_id = rec.env['payment.journal.mapping'].search([
-                    ('payment_type', '=', payment_type)
-                ]).journal_id.id
+                    ('payment_type', '=', 'cash')
+                    ]).journal_id.id
                 _logger.info("Journal Id:%s", journal_id)
                 if not journal_id:
                     raise UserError("Please define a journal for this company")
-        return {
-            'name': _('Register Payment'),
-            'res_model': 'account.payment.register',
-            'view_mode': 'form',
-            'context': {
-                'active_model': 'account.move',
-                'active_ids': self.ids,
-                'default_journal_id': journal_id
-            },
-            'target': 'new',
-            'type': 'ir.actions.act_window',
-        }
+            
+                return {
+                    'name': _('Register Payment'),
+                    'res_model': 'account.payment.register',
+                    'view_mode': 'form',
+                    'context': {
+                        'active_model': 'account.move',
+                        'active_ids': self.ids,
+                        'default_journal_id': journal_id
+                    },
+                    'target': 'new',
+                    'type': 'ir.actions.act_window',
+                }
 
     def action_generate_attachment(self, account_id, claim_id):
         _logger.info("Inside action_generate_attachment")

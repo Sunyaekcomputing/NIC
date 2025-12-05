@@ -341,7 +341,6 @@ class SaleOrderLineInherit(models.Model):
     _description = 'Sale Order Line Inherit'
     
     payment_type = fields.Selection(selection="_get_payment_type_data", string="Payment Type", related="order_id.payment_type", readonly=False)
-
     insurance_remain_qty = fields.Integer(string="Ins Rem Qty", readonly=True)
 
     @api.model
@@ -361,6 +360,24 @@ class SaleOrderLineInherit(models.Model):
     #                 if not rec.lot_id:
     #                     _logger.info("Lot Id is required for Storable Produts")
     #                     raise ValidationError("Lot Id is required for Storable Produts")
+    
+    @api.onchange('product_id')
+    def _onchange_shop_id(self):
+        if not self.order_id.shop_id:
+            return {}
+
+        shop_id = self.order_id.shop_id.id
+
+        products = self.env['product.product'].search([
+            ('shop_id', '=', shop_id)
+        ])
+
+        return {
+            'domain': {
+                'product_id': [('id', 'in', products.ids)]
+            }
+        }
+
                     
                     
             
