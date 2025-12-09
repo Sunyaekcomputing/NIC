@@ -35,6 +35,7 @@ class InsuranceClaim(models.Model):
     partner_uuid = fields.Char(string="Customer UUID", store=True, readonly=True)
     sale_orders = fields.Many2many('sale.order', string="Sale Orders")
     currency_id = fields.Many2one(related="sale_orders.currency_id", string="Currency", store=True, readonly=True)
+    icd_code = fields.Many2many('insurance.disease.code', string="Diagnosis", store=True)
 
     def _create_claim(self, sale_order):
         _logger.info("Inside Create Claim overwritten")

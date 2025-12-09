@@ -312,6 +312,31 @@ class SaleOrderInherit(models.Model):
                 _logger.info("****Created Invoices*****")
                 _logger.info("Account Invoice Id:%s", create_invoices)
                 self.action_invoice_create_commons(rec)
+                
+                """Pass lot/serial number value from sale order to stock picking model"""
+                for sale_order in self:
+                    pickings = sale_order.picking_ids.filtered(
+                        lambda p: p.picking_type_code == "outgoing" and p.state not in ['done', 'cancel']
+                    )
+                    _logger.info("Picking Id:%s", pickings)
+
+                    for picking in pickings: #stock.picking
+                        for move in picking.move_ids_without_package: #stock.move
+                            for ml in move.move_line_ids: #stock.move.line
+                                sale_line = sale_order.order_line.filtered(lambda l: l.product_id == move.product_id and l.lot_id == ml.lot_id)
+                                if not sale_line:
+                                    _logger.warning("No matching sale line found for product %s in %s", move.product_id.display_name, sale_order.name)
+                                    continue
+                        
+                                matched_line = sale_line[0]
+                                _logger.info("Matched Line:%s", matched_line)
+                                ml.qty_done = matched_line.product_uom_qty
+                                _logger.info("Updated qty done=%s for product:%s lot:%s", ml.qty_done, move.product_id.display_name, ml.lot_id.display_name)
+
+                        # Validate the picking once all moves are updated
+                        picking.button_validate()
+                        _logger.info("Picking %s validated for Sale Order %s", picking.name, sale_order.name)
+
                 if rec.env.user.has_group('bahmni_sale.group_redirect_to_payments_on_sale_confirm'):
                     _logger.info("Inside bahmni_sale.group_redirect_to_payments_on_sale_confirm")
                     action = {
