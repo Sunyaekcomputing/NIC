@@ -7,6 +7,11 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='partner_id']" position="after">
                 <field name = "move_payment_type" attrs="{'readonly': [('state', '!=', 'draft')], 'invisible': [('move_type', 'in', ['in_invoice', 'in_refund'])]}"/>
+                <field name="nhis_number"/>
+                <field name="claim_id"/>
+            </xpath>
+            <xpath expr="//button[@name='action_invoice_sent']" position="after">
+                <button name="print_custom_invoice" string="Print Report" type="object" class="btn-primary"/>
             </xpath>
         </field>
     </record>

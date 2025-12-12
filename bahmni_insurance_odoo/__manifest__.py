@@ -7,7 +7,7 @@
     """,
     'author': "Rijan Maharjan",
     'website': "",
-    'depends': ['sale', 'stock', 'purchase', 'bahmni_sale', 'account'],
+    'depends': ['sale', 'stock', 'purchase', 'bahmni_sale', 'account', 'base_accounting_kit'],
     'data': [
         'security/insurance_security.xml',
         'security/ir.model.access.csv',
@@ -26,7 +26,9 @@
         'views/account_move_view.xml',
         'views/account_payment_register_view.xml',
         'views/account_payment_view.xml',
-        'wizard/check_eligibility_response.xml'
+        'wizard/check_eligibility_response.xml',
+        'reports/report_action_book.xml',
+        'reports/account_invoice_report.xml'
         # 'views/stock_lot_view.xml'
     ],
     'installable': True,

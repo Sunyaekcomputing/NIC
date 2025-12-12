@@ -361,6 +361,13 @@ class SaleOrderInherit(models.Model):
             _logger.info("Sale Order Id:%s", order)
             self.env['insurance.claim']._create_claim(order)
 
+    def _prepare_invoice(self):
+        _logger.info("Inside _prepare_invoice")
+        res = super(SaleOrderInherit, self)._prepare_invoice()
+        res['nhis_number'] = self.nhis_number
+        res['claim_id'] = self.claim_id
+        return res
+
 class SaleOrderLineInherit(models.Model):
     _inherit = 'sale.order.line'
     _description = 'Sale Order Line Inherit'

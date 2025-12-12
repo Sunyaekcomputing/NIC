@@ -8,7 +8,10 @@ class AccountMoveInherit(models.Model):
     _name = 'account.move'
     _inherit = 'account.move'
 
+    nhis_number = fields.Char(string="NHIS Number")
+    claim_id = fields.Char(string="Claim Id")
     move_payment_type = fields.Selection(string="Payment Type", related="order_id.payment_type", readonly=False)
+    print_combine_count = fields.Integer(string="Print Combine Count", default=0)
 
     # @api.model
     # def _get_payment_type_data(self):
@@ -119,4 +122,46 @@ class AccountMoveInherit(models.Model):
             'attachment_ids': [(4, attachment.id)]
         })
         _logger.info("Attachment added to the insurance claim line")        
+
+    def print_custom_invoice(self):
+        _logger.info("*****Inside print report*****")
+        self.ensure_one()
+        return self.env.ref('bahmni_insurance_odoo.action_report_account_invoice').report_action(self)
+    
+    def change_size_page(self, items, combined="None"):
+        base_format = self.env['report.paperformat'].browse(7)
+        _logger.info("Base Format:%s", base_format)
+
+        if combined == "combines":
+            line_count = self.env['account.move.line'].search_count([
+                ('move_id.invoice_origin', '=', self.invoice_origin)
+            ])
+            _logger.info("Line Count:%s", line_count)
+            height = 350 + (line_count * 12)
+        else:
+            height = 220 + (len(items) * 12)
+
+        dynamic_format = base_format.copy({
+            'name': 'Dynamic Height Format',
+            'format': 'custom',
+            'page_height': height
+        })
+
+        return dynamic_format.id
+    
+    def combine_count_print(self):
+        for count in self:
+            count.print_combine_count = count.print_combine_count + 1
+            self.update({
+                'print_combine_count': count.print_combine_count
+            })
+
+    def adjusted_combine_count_print(self):
+        if self.print_combine_count > 1:
+            return self.print_combine_count - 1
+        return self.print_combine_count
+
+
+
         
+  
