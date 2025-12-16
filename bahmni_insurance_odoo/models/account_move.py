@@ -11,7 +11,7 @@ class AccountMoveInherit(models.Model):
     nhis_number = fields.Char(string="NHIS Number")
     claim_id = fields.Char(string="Claim Id")
     move_payment_type = fields.Selection(string="Payment Type", related="order_id.payment_type", readonly=False)
-    print_combine_count = fields.Integer(string="Print Combine Count", default=0)
+    print_invoice_count = fields.Integer(string="Print Combine Count", default=0)
 
     # @api.model
     # def _get_payment_type_data(self):
@@ -148,18 +148,16 @@ class AccountMoveInherit(models.Model):
         })
 
         return dynamic_format.id
-    
-    def combine_count_print(self):
+ 
+    def count_invoice_print(self):
         for count in self:
-            count.print_combine_count = count.print_combine_count + 1
-            self.update({
-                'print_combine_count': count.print_combine_count
-            })
-
-    def adjusted_combine_count_print(self):
-        if self.print_combine_count > 1:
-            return self.print_combine_count - 1
-        return self.print_combine_count
+            count.print_invoice_count += 1
+            
+    def adjusted_count_invoice_print(self):
+        if self.print_invoice_count > 1:
+            return self.print_invoice_count - 1
+        else:
+            return self.print_invoice_count
 
 
 

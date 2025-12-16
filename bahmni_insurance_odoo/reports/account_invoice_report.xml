@@ -21,14 +21,13 @@
                                     </div>
                                 </div>
                             </div>
-                            <!-- <t t-esc="o.change_size_page(o.invoice_line_ids, 'combines')"/> -->
-                            <p style="font-size:20px;margin-left:7px;" class="text-right">
-                                <t t-esc="o.combine_count_print()"/>
-                                <t t-if="o.print_combine_count == 1">
+                            <p style="font-size:20px" class="text-right">
+                                <t t-esc="o.count_invoice_print()"/>
+                                <t t-if="o.print_invoice_count == 1">
                                     original invoice
                                 </t>
-                                <t t-elif="o.print_combine_count > 1">
-                                    <span t-esc="o.adjusted_combine_count_print()"/>
+                                <t t-elif="o.print_invoice_count > 1">
+                                    <span t-esc="o.adjusted_count_invoice_print()"/>
                                     <t> copy of invoice</t>
                                 </t>
                             </p>
@@ -47,6 +46,10 @@
                                 </div>
                                 <div class="col-auto col-3 mw-100 mb-2">
                                     <strong>Gender:</strong>
+                                    <p class="m-0" t-field="o.invoice_origin"/>
+                                </div>
+                                <div class="col-auto col-3 mw-100 mb-2">
+                                    <strong>Age:</strong>
                                     <p class="m-0" t-field="o.invoice_origin"/>
                                 </div>
                                 <div class="col-auto col-3 mw-100 mb-2">

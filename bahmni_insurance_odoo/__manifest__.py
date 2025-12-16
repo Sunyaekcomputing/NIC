@@ -28,7 +28,8 @@
         'views/account_payment_view.xml',
         'wizard/check_eligibility_response.xml',
         'reports/report_action_book.xml',
-        'reports/account_invoice_report.xml'
+        'reports/account_invoice_report.xml',
+        'reports/request_quotation.xml'
         # 'views/stock_lot_view.xml'
     ],
     'installable': True,
