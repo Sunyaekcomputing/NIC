@@ -8,5 +8,33 @@
             <field name="report_name">bahmni_insurance_odoo.report_account_invoice</field>  
             <field name="report_file">bahmni_insurance_odoo.report_account_invoice</field>
         </record>
+        <record id="action_report_purchase_quotation" model="ir.actions.report">
+            <field name="name">माग फारम</field>
+            <field name="model">purchase.order</field>
+            <field name="report_type">qweb-html</field>
+            <field name="report_name">bahmni_insurance_odoo.report_purchase_quotation</field>
+            <field name="report_file">bahmni_insurance_odoo.report_purchase_quotation</field>
+            <!--To add report inside the print button-->
+            <field name="binding_model_id" ref="purchase.model_purchase_order"></field>
+            <field name="binding_type">report</field>
+        </record>
+        <record id="action_report_purchase_order" model="ir.actions.report">
+            <field name="name">खरिद आदेश</field>
+            <field name="model">purchase.order</field>
+            <field name="report_type">qweb-html</field>
+            <field name="report_name">bahmni_insurance_odoo.report_purchase_order</field>
+            <field name="report_file">bahmni_insurance_odoo.report_purchase_order</field>
+            <field name="binding_model_id" ref="purchase.model_purchase_order"></field>
+            <field name="binding_type">report</field>
+        </record>
+        <record id="action_report_dakhila" model="ir.actions.report">
+            <field name="name">दाखिला प्रतिवेदन</field>            
+            <field name="model">stock.picking</field>
+            <field name="report_type">qweb-html</field>
+            <field name="report_name">bahmni_insurance_odoo.report_dakhila</field>
+            <field name="report_file">bahmni_insurance_odoo.report_dakhila</field>
+            <field name="binding_model_id" ref="stock.model_stock_picking"></field>
+            <field name="binding_type">report</field>
+        </record>
     </data>
 </odoo>

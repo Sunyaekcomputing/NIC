@@ -29,7 +29,9 @@
         'wizard/check_eligibility_response.xml',
         'reports/report_action_book.xml',
         'reports/account_invoice_report.xml',
-        'reports/request_quotation.xml'
+        'reports/purchase_order_report.xml',
+        'reports/purchase_quotation_report.xml',
+        'reports/dakhila_report.xml'
         # 'views/stock_lot_view.xml'
     ],
     'installable': True,

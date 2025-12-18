@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data>
+        <template id="report_purchase_quotation">
+            <t t-call="web.html_container">
+                <t t-foreach="docs" t-as="doc">
+                    <t t-call="web.basic_layout">
+                        <div class="page">
+                            <div class="img-class">
+                                <img t-att-src="'/web/image/res.company/%s/logo_web' % doc.company_id.id"
+                                    style="width:80px; height:65px;"/>
+                            </div>
+
+                            <div class="pradesh">
+                                <h6><b>प्रदेश सरकार</b></h6>
+                                <h6><b>स्वास्थ्य तथा जनसंख्या मन्त्रालय</b></h6>
+                                <h6><b>स्वास्थ्य निर्देशनालय</b></h6>
+                                <h5><b>प्रदेश अस्पताल,पुतलीबजार,स्याङ्जा</b></h5>
+                                <h6><b>कार्यालय कोड नं: ३५००९४३०१४</b></h6>
+                                <h5><u><b>माग फारम</b></u></h5>  
+                            </div>  
+
+                            <div class="pharam">
+                                <p>म.ले.प.फारम नं: ४०२</p>
+                            </div>
+                           
+                            <div class="mt-4" style="float:right; font-size:14px;">
+                                <p>आ.ब: <span t-esc="doc.create_date.strftime('%Y-%m-%d')"></span></p>
+                                <p>माग नं: <span t-esc="doc.name"></span> </p>
+                                <p>मिति: <span t-esc="doc.date_order.strftime('%Y-%m-%d')"></span></p>
+                            </div>
+                    
+                            <table style="width:100%; border-collapse: collapse; font-size:14px; border:1px solid black; text-align:center;">
+                                <thead>
+                                    <tr>
+                                        <th style="padding:5.5px; width:10%;" rowspan="2">क्र.सं.</th>
+                                        <th style="padding:5.5px; width:40%;" rowspan="2">सामानको नाम</th>
+                                        <th style="padding:5.5px;" rowspan="2">स्पेसिफिकेसन</th>
+                                        <th style="padding:5.5px;" colspan="2">माग गरियको</th>
+                                        <th style="padding:5.5px;" rowspan= "2">कैफियत</th>
+                                    </tr>
+
+                                    <tr>
+                                        <th style="padding:4.5px;">एकाई</th>
+                                        <th style="padding:4.5px;">परिमाण</th>
+                                    </tr>
+                                </thead>
+                               <tbody> 
+                                    <t t-set="serial_number" t-value="1"/>
+                                    <t t-foreach="doc.order_line" t-as="order">
+                                        <tr>
+                                            <td t-esc="serial_number" style="padding:5.5px;"></td>
+                                            <td t-esc="order.product_id.name"></td>
+                                            <td t-esc="order.product_id.name"></td>
+                                            <td t-esc="order.product_id.categ_id.name">n/a</td>
+                                            <td t-esc="order.product_qty"></td>
+                                            <td></td>
+                                            <t t-set="serial_number" t-value = "serial_number + 1"/>
+                                        </tr>
+                                    </t>
+                               </tbody>
+                            </table>       
+                            <div class="row mt-4">
+                                <div class="col-4">
+                                    <table class="mid-table">
+                                        <tr> 
+                                            <td>माग गर्नेको दस्तखत:</td>
+                                        </tr> 
+                                        <tr>
+                                            <td>नाम:</td>
+                                        </tr>
+                                        <tr>
+                                            <td>मिति:</td>
+                                        </tr>
+                                        <tr>
+                                            <td>प्रयोजन:</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="col-4">
+                                    <table class="mid-table">
+                                        <tr> 
+                                            <td>सिफारिस गर्नेको दस्तखत:</td>
+                                        </tr> 
+                                        <tr>
+                                            <td>नाम:</td>
+                                        </tr>
+                                        <tr>
+                                            <td>मिति:</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="col-4">
+                                    <table class="mid-table">
+                                        <tr> 
+                                            <td>क) बजारबाट खरिद गरि दिनु: <input type="checkbox"></input></td>
+                                        </tr> 
+                                        <tr>
+                                            <td>ख) मौज्दातबाट दिनु: <input type="checkbox"></input></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>                        
+                            
+                            <div class="row mt-4">
+                                <div class="col-4">
+                                    <table class="foot-table">
+                                        <tr> 
+                                            <td>मालसामान बुझिलिनेको दस्तखत:</td>
+                                        </tr> 
+                                        <tr>
+                                            <td>नाम:</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="col-4">
+                                    <table class="foot-table">
+                                        <tr> 
+                                            <td style="text-align:right;">आदेश दिनेको दस्तखत:</td>
+                                        </tr> 
+                                        <tr>
+                                            <td style="text-align:right;">मिति:</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="text-align:right;">जिन्सी खातामा चडाउनेको दस्तखत:</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="text-align:right;">मिति:</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                            <style>
+                                .pradesh {
+                                    font-weight: bold;
+                                    text-align: center;
+                                }
+                            
+                                .pharam {
+                                    float: right;
+                                    display: block;
+                                }
+                    
+                                .pharam p {  
+                                    position: relative; 
+                                    bottom: 180px;
+                                    font-weight: bold;
+                                }
+
+                                .mid-table {
+                                    width: 100%;
+                                    border: 1px solid white;
+                                }
+
+                                .mid-table td{
+                                    font-size: 14px;
+                                }
+
+                                .foot-table {
+                                    width: 100%;
+                                    border: 1px solid white;
+                                }
+
+                                .foot-table td {
+                                    font-size: 14px;
+                                }
+
+                                .img-class {
+                                    position: relative;
+                                    top: 70px;
+                                }
+                                
+                                .page {
+                                    position: absolute;
+                                    top: -60px;
+                                    
+                                }
+                                
+                            </style>   
+                        </div>
+                    </t>
+                </t>
+            </t>
+        </template>
+    </data>
+</odoo>

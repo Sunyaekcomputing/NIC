@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data>
+        <template id="report_purchase_order">
+            <t t-call="web.html_container">
+                <t t-foreach="docs" t-as="doc">
+                    <t t-call="web.basic_layout">
+                        <div class="page">
+                            <div class="img-class">
+                                <img t-att-src="'/web/image/res.company/%s/logo_web' % doc.company_id.id" 
+                                    style="width:80px; height:65px;"/>
+                            </div>
+
+                            <div class="pradesh">
+                                <h6><b>प्रदेश सरकार</b></h6>
+                                <h6><b>स्वास्थ्य तथा जनसंख्या मन्त्रालय</b></h6>
+                                <h6><b>स्वास्थ्य निर्देशनालय</b></h6>
+                                <h5><b>प्रदेश अस्पताल,पुतलीबजार,स्याङ्जा</b></h5>
+                                <h6><b>कार्यालय कोड नं: ३५००९४३०१४</b></h6>
+                                <h5><u><b>खरिद आदेश</b></u></h5>  
+                            </div>
+                              
+                            <div class="pharam">
+                                <p>म.ले.प.फारम नं: ४०२</p>
+                            </div>
+
+                            <table class="head-table">
+                                <tr>
+                                    <td>श्री: <t t-esc="doc.partner_id.name"></t></td>
+                                    <td></td>
+                                    <td>खरिद आदेश नं.: <t t-esc="doc.name"></t></td>
+                                </tr>
+                                <tr>
+                                    <td>आदेश गरिएको व्यक्ति/निकायको नाम:</td>
+                                    <td></td>
+                                    <td>खरिद आदेश मिति: <t t-esc="doc.date_order.strftime('%Y-%m-%d')"></t></td>
+                                </tr>
+                                <tr>
+                                    <td>ठेगाना:<t t-esc="doc.partner_id.street"></t></td>
+                                    <td>फोन नं.:<t t-esc="doc.partner_id.mobile"></t></td>
+                                    <td>खरिद सम्बन्धि निर्णय नं.:</td>
+                                </tr>
+                                <tr>
+                                    <td>संस्था दर्ता नं.:</td>
+                                    <td>पान नं.:३०५०४४००८ </td>
+                                    <td>निर्णय मिति: <t t-esc="doc.date_order.strftime('%Y-%m-%d')"></t></td>
+                                </tr>
+                            </table>
+    
+                            <table class='table mid-table' cellspacing="0" cellpadding="0">
+                                <tr class="text-center">
+                                    <th t-att-rowspan="2">क्र.सं.</th>
+                                    <th t-att-colspan="5">सामानको</th>
+                                    <th t-att-colspan="2">मूल्य</th>
+                                    <th t-att-rowspan="2">कैफियत</th>
+                                </tr>
+                                
+                                <tr class="text-center">
+                                    <th>जिन्सी वर्गीकरण सङ्केत नं.</th>
+                                    <th>नाम</th>
+                                    <th>स्पेसिफिकेसन</th>
+                                    <th>एकाई</th>
+                                    <th>परिमाण</th>
+                                    <th>दर</th>
+                                    <th>जम्मा रकम</th>
+                                </tr>
+                                <t t-set="serial_number" t-value="1"/>
+                                <tr>
+                                    <t t-if="doc.order_line">
+                                        <t t-foreach="doc.order_line" t-as="order">
+                                            <tr class="text-center">
+                                                <td t-esc="serial_number"></td>
+                                                <td t-esc="407"></td>
+                                                <td t-esc="order.product_id.name"></td>
+                                                <td t-esc="order.product_id.name"></td>
+                                                <td t-esc="order.product_id.categ_id.name">n/a</td>
+                                                <td t-esc="order.product_qty"></td>
+                                                <td t-esc="order.price_unit"></td>
+                                                <td t-esc="order.price_subtotal"></td>
+                                                <td></td>
+                                                <t t-set="serial_number" t-value = "serial_number + 1"/>
+                                            </tr>
+                                        </t>
+                                    </t>
+                                </tr>
+                                <tr class="text-center">
+                                    <td t-att-colspan="7" style="text-align:right;">जम्मा:</td>
+                                    <td t-att-colspan="1" t-esc="doc.amount_untaxed"></td>
+                                    <td></td>
+                                </tr> 
+                                <tr class="text-center">
+                                    <td t-att-colspan="7" style="text-align:right;">मु.अ.कर (१३%)</td>
+                                    <td t-att-colspan="1" t-esc="doc.amount_tax"></td>
+                                    <td></td>
+                                </tr> 
+                                <tr class="text-center">
+                                    <td t-att-colspan="7" style="text-align:right;">कूल जम्मा रकम:</td>
+                                    <td t-att-colspan="1" t-esc="doc.amount_total"></td>
+                                    <td></td>
+                                </tr> 
+                            </table>
+
+                            <div class="tclass">
+                                <p>माथि उल्लिखित सामानहरु मिति.............................भित्र Syangja Hospital - Syangja मा दाखिल गरि बिल/ इनभाइस प्रस्तुत गर्नुहोला ।</p>
+                            </div>       
+                            
+                            <span>उपयुक्त अनुसार खरिद आदेश तयार गर्ने, सिफारिस गर्ने र स्वीकृत गर्ने:</span>
+
+                            <div class="row">
+                                <div class="col-4">
+                                    <table class="foot-table">
+                                        <tr>
+                                            <td>फाॅटवालाको दस्तखत:</td>
+                                        </tr>
+                                        <tr>
+                                            <td>नाम: <t t-esc="doc.create_uid.name"></t></td>
+                                        </tr> 
+                                        <tr>
+                                            <td>मिति:</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="col-4">
+                                    <table class="foot-table">
+                                        <tr>
+                                            <td>शाखा प्रमुखको दस्तखत:</td>
+                                        </tr>
+                                        <tr>
+                                            <td>नाम:</td>
+                                        </tr> 
+                                        <tr>
+                                            <td>मिति:</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="col-4">
+                                    <table class="foot-table">
+                                        <tr>
+                                            <td>कार्यालय प्रमुखको दस्तखत:</td>
+                                        </tr>
+                                        <tr>
+                                            <td>नाम:</td>
+                                        </tr> 
+                                        <tr>
+                                            <td>मिति:</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                            <br></br>
+                            <div class="tclass">
+                                <p>माथि उल्लिखित सामानहरु मिति.............................भित्र Syangja Hospital - Syangja कार्यालयमा बुझाउने छु भनी सहिछाप गर्ने । </p> 
+                            </div>
+
+                            <div class="row">
+                                <div class="col-4">
+                                    <table class="foot-table">
+                                        <tr>
+                                            <td>फर्मको नाम: <t t-esc="doc.partner_id.name"></t></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="col-4">
+                                    <table class="foot-table">
+                                        <tr>
+                                            <td>दस्तखत र छाप:</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="col-4">
+                                    <table class="foot-table">
+                                        <tr>
+                                            <td>मिति:</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!--Style tag css-->
+                            <style type="text/css">
+                                .head-table {
+                                    width: 100%;
+                                    border: 1px solid white;
+                                }
+
+                                .head-table td {
+                                    padding: 5px;
+                                    font-size: 14px;
+                                }
+
+                                .text-center th, .text-center td {
+                                    border: 1px solid black;
+                                }
+
+                                .mid-table th, .mid-table td {
+                                    font-size: 14px;
+                                    text-align: center;
+                                }
+
+                                .foot-table {
+                                    border: 1px solid white; 
+                                    width: 100%;
+                                }
+
+                                .foot-table td {
+                                    font-size: 14px;
+                                    padding: 5px;
+                                }
+
+                                .pradesh {
+                                    font-weight: bold;
+                                    text-align: center;
+                                }
+                            
+                                .pharam {
+                                    float: right;
+                                    display: block;
+                                }
+                    
+                                .pharam p {  
+                                    position: relative; 
+                                    bottom: 180px;
+                                    font-weight: bold;
+                                }
+
+                                .tclass {
+                                    font-size: 14px;
+                                }
+
+                                .img-class {
+                                    position: relative;
+                                    top: 70px;
+                                }
+                                
+                                .page {
+                                    position: absolute;
+                                    top: -60px;
+                                }
+                            </style>
+                        </div>
+                    </t>
+                </t>
+            </t>
+        </template>
+    </data>
+</odoo>
