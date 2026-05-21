@@ -32,5 +32,5 @@
         <field name="view_mode">tree,form</field>
         <field name="view_id" ref="insurance_disease_code_tree_view"></field>
     </record>
-    <menuitem id="menu_insurance_disease_code" name="Insurace Disease Code" sequence="12" parent="menu_emr_configuration" action="action_insurance_disease_code"/>
+    <menuitem id="menu_insurance_disease_code" name="Insurace Disease Code" sequence="10" parent="menu_emr_configuration" action="action_insurance_disease_code"/>
 </odoo>

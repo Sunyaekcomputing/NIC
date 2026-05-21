@@ -37,5 +37,5 @@
         <field name="view_id" ref="hib_config_settings_tree_view"></field>
     </record>
 
-    <menuitem id="menu_hib_settings" name="HIB Settings" sequence="10" parent="menu_emr_configuration" action="action_hib_config_settings"/>
+    <menuitem id="menu_hib_settings" name="HIB Settings" sequence="5" parent="menu_emr_configuration" action="action_hib_config_settings"/>
 </odoo>

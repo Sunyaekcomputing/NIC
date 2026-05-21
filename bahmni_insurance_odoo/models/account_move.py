@@ -10,18 +10,18 @@ class AccountMoveInherit(models.Model):
 
     nhis_number = fields.Char(string="NHIS Number")
     claim_id = fields.Char(string="Claim Id")
-    move_payment_type = fields.Selection(string="Payment Type", related="order_id.payment_type", readonly=False)
+    move_payment_type = fields.Selection(selection="_get_payment_type_data", string="Payment Type",  readonly=False)
     print_invoice_count = fields.Integer(string="Print Combine Count", default=0)
 
-    # @api.model
-    # def _get_payment_type_data(self):
-    #     returnData = []
-    #     payment_type_ids = self.env['payment.types'].search([])
-    #     if payment_type_ids:
-    #         for pt in payment_type_ids:
-    #             data = payment_type_ids.browse(pt.id)
-    #             returnData.append((data.key, data.value))
-    #     return returnData
+    @api.model
+    def _get_payment_type_data(self):
+        returnData = []
+        payment_type_ids = self.env['payment.types'].search([])
+        if payment_type_ids:
+            for pt in payment_type_ids:
+                data = payment_type_ids.browse(pt.id)
+                returnData.append((data.key, data.value))
+        return returnData
 
     def action_register_payment(self):
         ''' Open the account.payment.register wizard to pay the selected journal entries.

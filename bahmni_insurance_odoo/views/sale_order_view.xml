@@ -14,11 +14,23 @@
                 <field name="payment_type"/>
                 <field name="external_visit_uuid"/>
             </xpath>
+            <xpath expr="//field[@name='external_visit_uuid']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='care_setting']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='provider_name']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='shop_id']" position="after">
+                <field name="visit_type" readonly="1"/>
+            </xpath>
             <xpath expr="//field[@name='payment_term_id']" position="after">
                 <field name="claim_id"/>
             </xpath>
             <xpath expr="//field[@name='order_line']/tree/field[@name='name']" position="after">
-                <field name="payment_type"/>
+                <field name="payment_type" readonly="1"/>
                 <field name="insurance_remain_qty" attrs="{'invisible':[('payment_type', '=', 'cash')]}"/>
             </xpath>
             <xpath expr="//field[@name='order_line']/tree/field[@name='name']" position="attributes">
