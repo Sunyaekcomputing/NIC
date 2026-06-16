@@ -85,11 +85,8 @@ class AccountMoveInherit(models.Model):
             report_name, 
             account_id.ids
         )[0]
-        _logger.info("PDF:%s", pdf)
 
         b64_pdf = base64.b64encode(pdf)
-
-        _logger.info("Encoded PDF:%s", b64_pdf)
 
         # Attachment Name
         attachment_name = account_id.name
@@ -109,7 +106,6 @@ class AccountMoveInherit(models.Model):
             "res_id": account_id.id,
             "mimetype": 'application/pdf'
         }
-        _logger.info("Attachment Value:%s", attachment_value)
 
         attachment = self.env['ir.attachment'].create(attachment_value)
   

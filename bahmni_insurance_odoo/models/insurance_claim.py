@@ -3,6 +3,7 @@ from odoo.exceptions import ValidationError, UserError
 import requests
 import pdfkit
 import base64
+import json
 import logging
 _logger = logging.getLogger(__name__)
 
@@ -31,28 +32,41 @@ class InsuranceClaim(models.Model):
         ('valuated', 'Valuated'),
         ('rejected', 'Rejected')
     ], string="State", default="draft")
-    claim_uuid = fields.Text(string="Claim UUID")
-    insurance_claim_line = fields.One2many('insurance.claim.line', 'claim_id', string="Insurance Claim Line")
-    attachment_ids = fields.Many2many('ir.attachment', string="Attachments")
-    external_visit_uuid = fields.Char(string="External Visit Id", help="This field is used to store visit id of a patient")
-    visit_type = fields.Char(string="Visit Type", store=True)
+    claim_uuid = fields.Char(string="Claim UUID", store=True, readonly=True)
+    insurance_claim_line = fields.One2many('insurance.claim.line', 'claim_id', string="Insurance Claim Line", copy=True)
+    attachment_ids = fields.Many2many('ir.attachment', string="Attachments", copy=True)
+    external_visit_uuid = fields.Char(string="External Visit Id", help="This field is used to store visit id of a patient", readonly=True)
+    visit_type = fields.Char(string="Visit Type", store=True, readonly=True)
     partner_uuid = fields.Char(string="Customer UUID", store=True, readonly=True)
     sale_orders = fields.Many2many('sale.order', string="Sale Orders")
     currency_id = fields.Many2one(related="sale_orders.currency_id", string="Currency", store=True, readonly=True)
-    icd_code = fields.Many2many('insurance.disease.code', string="Diagnosis", store=True)
-    insurance_claim_history = fields.One2many('insurance.claim.history', 'claim_id', string="Claim Lines")
+    icd_code = fields.Many2many('insurance.disease.code', string="Diagnosis", store=True, copy=True)
+    insurance_claim_history = fields.One2many('insurance.claim.history', 'claim_id', string="Claim Lines", copy=True)
     claim_comments = fields.Text(string="Claim Comments")
     rejection_reason = fields.Text(string="Rejection Reason")
     claimed_amount_total = fields.Monetary(string="Total Claimed Amount", store=True, readonly=True, compute="_claimed_amount_all")
     code = fields.Integer(string="Critical Illness Code")
+    amount_approved_total = fields.Monetary(string="Total Approved Amount", store=True, readonly=True, compute="_claimed_amount_all")
+    generated_claim_code = fields.Char(string="Generated Claim Code", store=True, readonly=True)
+    claim_explanation = fields.Text(string="Explanation", store=True)
 
     def _create_claim(self, sale_order):
+        '''
+            Create/Update claims
+        '''
         _logger.info("Inside _create_claim")
         _logger.info("Sale Order Id:%s", sale_order)
         if sale_order and sale_order.payment_type in 'insurance':
+            '''
+                Create and save claims
+            '''
             if not sale_order.nhis_number:
                 raise ValidationError("Claim can't be created. NHIS Number is not present.")
-        
+            
+            insurance_sale_order_lines = sale_order.order_line.filtered(lambda r : r.payment_type == 'insurance')
+            if not insurance_sale_order_lines:
+                raise UserError("No Sales order line marked as Insurance Payment type")
+            
             nmc_value = ""
             if sale_order.provider_name:
                 nmc = sale_order.provider_name.split("_")
@@ -67,8 +81,29 @@ class InsuranceClaim(models.Model):
             visit_uuid = sale_order.external_visit_uuid
             _logger.info("Visit UUID:%s", visit_uuid)
 
-            if not visit_uuid:
-                _logger.info("Visit UUID is Empty")
+            claim_in_db = self.env['insurance.claim'].search([('external_visit_uuid', '=', visit_uuid), ('care_setting', '=', 'ipd'), ('state', '=', 'draft')])
+            _logger.info("Claim in db=%s", claim_in_db)
+
+            if claim_in_db:
+                '''Update existing claim'''
+                _logger.info("About to edit claim")
+                ''' Update contents of claim only if claim is partial or insurance'''
+                
+                ''' Update contents of claim line only if payment type is insurance'''
+                ''' Check whether a given product has a line item, if yes add quantity, if no add line item'''
+                ''' Check whether a patient has a claim, if yes then add new order item on same claim line'''
+                if claim_in_db.state in ['confirmed','submitted']:
+                    raise UserError("Claim in %s state. Claim should be in draft state to be editable. So new items can't be added"%(claim_in_db.state))
+            
+                if sale_order.id not in claim_in_db.sale_orders.ids:
+                    _logger.info("New Sale Order ID:%s", sale_order.id)
+                    claim_in_db.update({'sale_orders': claim_in_db.sale_orders + sale_order})
+            else:
+                '''Create new claim'''
+                _logger.info("About to Create new claim")
+                insurance_sale_order_lines = sale_order.order_line.filtered(lambda r : r.payment_type == 'insurance')
+                if not insurance_sale_order_lines:
+                    raise UserError("No Sales order line marked as Insurance Payment type")
 
             insurance_number = sale_order.nhis_number
             claim_code = sale_order.claim_id
@@ -127,20 +162,20 @@ class InsuranceClaim(models.Model):
                 
                 # Add history
                 self._add_history(claim_in_db)
-                
+
+                 # To generate pdf report in the ir.attachment model
+                _logger.info("Sale Order Name:%s", sale_order.name)
+                account_move_id = self.env['account.move'].search([
+                    ('invoice_origin', '=', sale_order.name)
+                ])
+                _logger.info("Account Move Id:%s", account_move_id)
+                claim_id = claim_in_db
+                _logger.info("Claim Id:%s", claim_id)
+                self.env['account.move'].action_generate_attachment(account_move_id, claim_id)
+                    
             except Exception as err:
                 _logger.info("\n Error generating claim draft:%s", err)
                 raise UserError(err)
-            
-            # To generate pdf report in the ir.attachment model
-            _logger.info("Sale Order Name:%s", sale_order.name)
-            account_move_id = self.env['account.move'].search([
-                ('invoice_origin', '=', sale_order.name)
-            ])
-            _logger.info("Account Move Id:%s", account_move_id)
-            claim_id = claim_in_db
-            _logger.info("Claim Id:%s", claim_id)
-            # self.env['account.move'].action_generate_attachment(account_move_id, claim_id)
         else:
             _logger.info("Payment Type:%s", sale_order.payment_type)
        
@@ -199,7 +234,8 @@ class InsuranceClaim(models.Model):
 
     def _add_history(self, claim_in_db):
         _logger.info("Inside _add_history")
-        claim_history = self.env['insurance.claim.history']._add_claim_history(claim_in_db)
+        claim_history_line = self.env['insurance.claim.history']._add_claim_history(claim_in_db)
+        claim_history = self.env['insurance.claim.history'].search([('claim_id', '=', claim_in_db.id)])
         _logger.info("Claim History=%s", claim_history)
         if claim_history:
             claim_in_db.update({
@@ -298,20 +334,34 @@ class InsuranceClaim(models.Model):
 
     def action_confirm(self):
         _logger.info("Inside action_confirm")
+
         # Check if state is draft or rejected
         for claim in self:
             _logger.info(claim)
             _logger.info("Claim State=%s", claim.state)
+
+            previous_claim = self.env['insurance.claim'].search([
+                ('nhis_number', '=', self.nhis_number),
+                ('external_visit_uuid', '=', self.external_visit_uuid),
+                ('id', '<', claim.id),
+            ], order='id asc', limit=1)
+
+            _logger.info("Previous Claim=%s", previous_claim)
+            _logger.info("Generated Claim Code=%s", previous_claim.generated_claim_code)
+
             if claim.state in ('draft', 'rejected'):
                 claim.update({
-                    'state': 'confirmed'
+                    'state': 'confirmed',
+                    'claim_code': previous_claim.generated_claim_code if previous_claim.generated_claim_code else ''
                 })
 
-            # Validate and then confirm
-            for claim_line in claim.insurance_claim_line:
-                _logger.info(claim_line)
-                if not claim_line.imis_product_code:
-                    raise UserError("%s has not been mapped. Please map the product and retry again."%(claim_line.product_id.name))
+                self._add_history(claim)
+
+                # Validate and then confirm
+                for claim_line in claim.insurance_claim_line:
+                    _logger.info(claim_line)
+                    if not claim_line.imis_product_code:
+                        raise UserError("%s has not been mapped. Please map the product and retry again."%(claim_line.product_id.name))
 
     @api.depends('insurance_claim_line.total_price')      
     def _claimed_amount_all(self):
@@ -324,24 +374,82 @@ class InsuranceClaim(models.Model):
             claim.claimed_amount_total = claimed_amount_total
             _logger.info("Claimed Amount Total=%s", claim.claimed_amount_total)
 
+    def _get_visit_data(self):
+        _logger.info("Inside _get_visit_data")
+        openmrs_connect_configurations = self.env['insurance.config.settings'].get_values()
+        _logger.info("Openmrs Configuration=%s", openmrs_connect_configurations)
+        if not openmrs_connect_configurations:
+            raise UserError("OpenMRS Configuration Not Set!!")
+        
+        insurance_connect = self.env['insurance.connect']
+        partner_uuid = self.partner_id.uuid
+        url = insurance_connect.prepare_openmrs_url("/openmrs/ws/rest/v1/visit?includeInactive=false&patient={}".format(partner_uuid), openmrs_connect_configurations)
+        _logger.error(url)
+        
+        custom_headers = {'Content-Type': 'application/json'}
+        headers = insurance_connect.get_openmrs_header(openmrs_connect_configurations)
+        
+        custom_headers.update(headers)   
+                    
+        response = requests.get(url, headers=custom_headers, verify=False)
+        _logger.info("Response=%s",response)
+        if response.status_code == 200:
+            resp = response.json()
+            _logger.info("Resp=%s", resp)
+            visit_uuid = response.json()["results"][0]["uuid"]
+            _logger.info("URL: %s", visit_uuid)
+            visit_url = insurance_connect.prepare_openmrs_url("/openmrs/ws/rest/v1/bahmnicore/visit/summary?visitUuid={}".format(visit_uuid), openmrs_connect_configurations)
+            _logger.error(visit_url)
+            custom_headers = {'Content-Type': 'application/json'}
+            headers = insurance_connect.get_openmrs_header(openmrs_connect_configurations)
+            custom_headers.update(headers)   
+            visit_response = requests.get(visit_url, headers=custom_headers, verify=False)
+            if visit_response.status_code == 200:
+                data = visit_response.json()
+                _logger.debug("Data=%s", data)
+                return data
+        else:
+            _logger.info(response.status_code)
+            raise UserError("Sales order doesn't have partner uuid")
+
     def action_claim_submit(self):
-        _logger.info("Inside action_claim_submit") 
-        # Convert to timestamp (seconds -> milliseconds)
-        start_date_time = self.create_date
-        long_start_datetime = int(start_date_time.timestamp() * 1000)
-        _logger.info("Long Start Datetime=%s", long_start_datetime)
-        end_date_time = self.create_date
-        long_end_datetime = int(end_date_time.timestamp() * 1000)
-        _logger.info("Long End Datetime=%s", long_end_datetime)
+        _logger.info("Inside action_claim_submit")
+        visit_data = self._get_visit_data()
+        _logger.info("Visit Data=%s",visit_data) 
+        visit_uuid = visit_data.get('uuid')
+        _logger.info("Visit UUID=%s", visit_uuid)
+
+        visit_type = visit_data.get('visitType')
+        _logger.info("lower visit type=%s", visit_type)
+
+        if visit_type.lower() == 'ipd':
+            _logger.info("Visit Type=%s", visit_type)
+            admission_details = visit_data.get('admissionDetails')
+            if admission_details is not None:
+                start_date_time = admission_details.get('date')
+                _logger.info("Start Date Time=%s", start_date_time)
+            else:
+                raise ValidationError("Start Date is NULL")
+
+            discharge_details = visit_data.get('dischargeDetails')
+            if discharge_details is not None:
+                end_date_time = discharge_details.get('date')
+                _logger.info("End Date Time=%s", end_date_time)
+            else:
+                raise ValidationError("End Date is NULL")
+        else:
+            _logger.info("Visit Type=%s", visit_type)
+            # Convert to timestamp (seconds -> milliseconds)
+            start_date_time = int(self.create_date.timestamp() * 1000)
+            _logger.info("Long Start Datetime=%s", start_date_time)
+            end_date_time = start_date_time
+            _logger.info("Long End Datetime=%s", end_date_time)
 
         visit_type_mapping = {
-            'opd': 'O',
-            'ipd': 'O',
-            'emergency': 'E',
+            'OPD': 'O',
+            'IPD': 'O',
+            'EMERGENCY': 'E',
         }
-
-        visit_type = self.visit_type
-        _logger.info("Visit Type=%s", self.visit_type)
 
         # Mapping the visit type
         mapped_visit_type = visit_type_mapping.get(visit_type)
@@ -356,6 +464,10 @@ class InsuranceClaim(models.Model):
                         'state': 'submitted',
                         'claimed_date': fields.Datetime.now()
                     })
+                    
+                    _logger.info("Claim State:%s", claim.state)
+                    _logger.info("Claim Date=%s", claim.claimed_date)
+                    _logger.info("Claim Code:%s", claim.claim_code)
 
                     care_setting_mapping = {
                         'opd': 'O',
@@ -363,10 +475,12 @@ class InsuranceClaim(models.Model):
                     }
 
                     care_type = claim.care_setting
+                    _logger.info("Care Type=%s", care_type)
 
                     # Mapping the care setting
                     mapped_care_setting = care_setting_mapping.get(care_type)
                     _logger.info("Mapped Care Setting=%s", mapped_care_setting)
+                    
                     self._add_history(claim)
 
                     claim_request = {
@@ -377,9 +491,10 @@ class InsuranceClaim(models.Model):
                         'total': claim.claimed_amount_total,
                         'item': [],
                         'diagnosis': [],
+                        "information": [],
                         'visit': {
-                            'startDate': long_start_datetime,
-                            'endDate': long_end_datetime,
+                            'startDate': start_date_time,
+                            'endDate': end_date_time,
                             'visitType': mapped_visit_type,
                             'visitUUID': claim.external_visit_uuid
                         },
@@ -409,7 +524,7 @@ class InsuranceClaim(models.Model):
                                 'code': claim_line.imis_product_code,
                                 'unitPrice': claim_line.price_unit
                             })
-                            sequence +=1
+                            sequence += 1
                     
                     sequence = 1
                     for claim_diagnosis in claim.icd_code:
@@ -421,6 +536,16 @@ class InsuranceClaim(models.Model):
                             })
                             sequence += 1
                     _logger.info("Claim Request=%s", claim_request)
+
+                    sequence = 1
+                    if claim.claim_explanation:
+                        claim_request['information'].append({
+                            'category': "explanation",
+                            'sequence': sequence,
+                            'valueString': claim.claim_explanation
+                        })
+                    
+                    _logger.info(claim_request)
 
                     if not claim_request['diagnosis']:
                         for line in claim.insurance_claim_line:
@@ -435,13 +560,75 @@ class InsuranceClaim(models.Model):
                                 _logger.info("NMC Number not required")
                             else:
                                 raise UserError("NMC Number cannot be empty")
+            
+            _logger.info("SUBMIT CLAIM")
             # Submit claim for processing
             response = self.env['insurance.connect']._submit_claims(claim_request)
-            _logger.name("Response=%s", response)
+            _logger.info("Response=%s", response)
+
+            if response:
+                self.update_claim_from_claim_response(claim, response)
 
         except Exception as err:
             _logger.error(err)
             raise UserError(err)
+        
+    def action_refund(self):
+        _logger.info("Action Refund Button Clicked!!")
+        for claim in self:
+            for claim_line in claim.insurance_claim_line:
+                if claim_line.product_id.type == "product":
+                    type = "item"
+                    _logger.info("Type:%s", type)
+                elif claim_line.product_id.type == "service":
+                    type = "service"
+                    _logger.info("Type:%s", type)
+
+                refund_request = { 
+                    "claimId": claim.claim_code,
+                    "type": type,
+                    "codes":[]
+                }
+            for claim_line in claim.insurance_claim_line:
+                if claim_line.imis_product_code:
+                    refund_request["codes"].append(claim_line.imis_product_code)
+            
+            _logger.info("Refund Request---->%s", refund_request)
+
+            response = self.env['insurance.connect']._submit_refund(refund_request)
+            _logger.info("Response=%s", response)
+            if response is None:
+                raise ValidationError("Nothing To Refund!! Check Claim Status in IMIS!!")
+            else:
+                raise ValidationError("Message: " + str(response.get('message') + "\nTotal Refunded Amount: " + str(response.get('refunded'))) )
+            
+    def update_claim_from_claim_response(self, claim, response):
+        _logger.info("Inside update_claim_from_claim_response")
+        claim.claim_uuid = response['claimUUID']
+        claim.amount_approved_total = response['approvedTotal']
+        claim.rejection_reason = response['rejectionReason']
+        claim.state = response['claimStatus']
+        claim.generated_claim_code = response['generatedClaimCode']
+
+        _logger.info("Claim Uuid=%s", claim.claim_uuid)
+        _logger.info("Claim State=%s", claim.state)
+        _logger.info("Generated Claim Code=%s", claim.generated_claim_code)
+        _logger.info("Claim=%s", claim)
+        _logger.info("Response=%s", response)
+
+        for claim_response_line in response['claimLineItems']:
+            _logger.info(json.dumps(claim_response_line))
+            claim_line = self.env['insurance.claim.line'].search([('claim_sequence', '=', claim_response_line['sequence']), ('claim_id', '=', claim.id)])
+            _logger.info(claim_response_line['sequence'])
+            if claim_line:
+                claim_line.state = claim_response_line['status']
+                claim_line.rejection_reason = claim_response_line['rejectedReason']
+                claim_line.amount_approved = claim_response_line['totalApproved']
+                claim_line.quantity_approved = claim_response_line['quantityApproved']
+            else:
+                _logger.info("////ELSE RUNNING/////")
+                claim.rejection_reason = claim_response_line['rejectedReason']
+                _logger.info("Rejection Reason:%s",claim.rejection_reason) 
         
 class InsuranceClaimLine(models.Model):
     _name = 'insurance.claim.line'
@@ -456,6 +643,14 @@ class InsuranceClaimLine(models.Model):
     total_price = fields.Monetary(string="Total Price", currency_field="currency_id")
     currency_id = fields.Many2one(related='claim_id.currency_id', string="Currency", readonly=True, required=True)
     claim_sequence = fields.Integer(string="Claim Sequence", readonly=True)
+    amount_approved = fields.Monetary(string='Approved amount', store=True)
+    state = fields.Selection([
+        ('draft', 'Draft'),
+        ('passed', 'Passed'),
+        ('rejected', 'Rejected')
+    ], string='Claim Status', readonly=True, store=True)
+    rejection_reason = fields.Text(string="Rejection Reason")
+    quantity_approved = fields.Integer(string='Quantity Approved', store=True)
 
 class InsuranceClaimHistory(models.Model):
     _name = 'insurance.claim.history'
@@ -464,7 +659,7 @@ class InsuranceClaimHistory(models.Model):
     claim_id = fields.Many2one('insurance.claim', string="Claim Id", required=True, ondelete="cascade", index=True, copy=False)
     partner_id = fields.Many2one(related="claim_id.partner_id", string="Insuree", readonly=True, index=True, tracking=True)
     claim_manager_id = fields.Many2one(related="claim_id.claim_manager_id", store=True, string="Claims Manager", readonly=True)
-    claim_code = fields.Char(string="Claim Code")
+    claim_code = fields.Char(string="Claim Code", store=True)
     claim_status = fields.Selection([
         ('draft', 'Draft'),
         ('confirmed', 'Confirmed'),

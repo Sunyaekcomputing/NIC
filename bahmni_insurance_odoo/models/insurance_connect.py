@@ -129,6 +129,53 @@ class InsuranceConnect(models.TransientModel):
                 raise UserError(error_msg)
         except Exception as err:
             _logger.error("\n Processing event threw error:%s", err)
+
+    def _submit_refund(self, refund_request):
+        _logger.info("Inside _submit_refund")
+        _logger.info("Refund Request:%s", refund_request)
+        if not refund_request:
+            raise UserError("Nothing To Refund")
+        
+        try:
+            insurance_configs = self.get_insurance_configurations()
+            url = self.prepare_url("/refund/claim", insurance_configs)
+            _logger.info("URL:%s", url)
+            encoded_data = json.dumps(refund_request)
+            _logger.info("Encoded Data=%s", encoded_data)
+            http = urllib3.PoolManager()
+            _logger.info("HTTP:%s", http)
+            custom_headers = {'Content-Type': 'application/json'}
+            headers = self.get_header(insurance_configs)
+            _logger.info("Headers:%s", headers)
+            custom_headers.update(headers)
+            _logger.info("Custom Header=%s", custom_headers)
+            req = http.request('POST', url, headers=custom_headers, body=encoded_data)
+            _logger.info("REQUEST=%s", req)
+            _logger.info("========= Response===============")
+            _logger.info(req.status)
+
+            if req.status == 200:
+                response = json.loads(req.data.decode('utf-8'))
+                _logger.info(response)
+                return response
+            elif req.status == 503:
+                    _logger.error(req.data)
+                    raise UserError("Insurance connect service not available. Please contact system administrator")
+            elif req.status == 401:
+                _logger.error(req.data)
+                raise UserError("Please check credentials for insurance connect service and retry again")
+            else:
+                # raise UserError(req.data.decode('utf-8'))
+                response = json.loads(req.data.decode('utf-8'))
+                _logger.info(json.dumps(response))
+                if response["operationOutComeException"] is None:
+                    error_msg = "Claim Submission Failed, Please contact your app admin"
+                else:
+                    error_msg = response["operationOutComeException"]
+                # error = "Submission Failed" % str(response["operationOutComeException"])
+                raise UserError(error_msg)
+        except Exception as err:
+            _logger.error("\n Processing event threw error: %s", err)
             
     def response_processor(self, response):
         _logger.info("********Response********")
