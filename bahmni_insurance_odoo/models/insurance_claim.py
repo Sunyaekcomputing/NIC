@@ -31,7 +31,7 @@ class InsuranceClaim(models.Model):
         ('checked', 'Checked'),
         ('valuated', 'Valuated'),
         ('rejected', 'Rejected')
-    ], string="State", default="draft")
+    ], string="Claim Status", default="draft")
     claim_uuid = fields.Char(string="Claim UUID", store=True, readonly=True)
     insurance_claim_line = fields.One2many('insurance.claim.line', 'claim_id', string="Insurance Claim Line", copy=True)
     attachment_ids = fields.Many2many('ir.attachment', string="Attachments", copy=True)
@@ -365,6 +365,9 @@ class InsuranceClaim(models.Model):
 
     @api.depends('insurance_claim_line.total_price')      
     def _claimed_amount_all(self):
+        """
+        Compute the total amounts of the claim
+        """
         _logger.info("Inside _claimed_amount_all")
         for claim in self:
             claimed_amount_total = 0.0
@@ -441,9 +444,9 @@ class InsuranceClaim(models.Model):
             _logger.info("Visit Type=%s", visit_type)
             # Convert to timestamp (seconds -> milliseconds)
             start_date_time = int(self.create_date.timestamp() * 1000)
-            _logger.info("Long Start Datetime=%s", start_date_time)
+            _logger.info("Start Datetime=%s", start_date_time)
             end_date_time = start_date_time
-            _logger.info("Long End Datetime=%s", end_date_time)
+            _logger.info("End Datetime=%s", end_date_time)
 
         visit_type_mapping = {
             'OPD': 'O',
@@ -515,7 +518,7 @@ class InsuranceClaim(models.Model):
                             if claim_line.product_id.product_tmpl_id.detailed_type == 'service':
                                 category = 'service'
                             else:
-                                category = 'product'
+                                category = 'item'
                             
                             claim_request['item'].append({
                                 'category': category,
@@ -535,8 +538,7 @@ class InsuranceClaim(models.Model):
                                 'sequence': sequence
                             })
                             sequence += 1
-                    _logger.info("Claim Request=%s", claim_request)
-
+                    
                     sequence = 1
                     if claim.claim_explanation:
                         claim_request['information'].append({
@@ -545,7 +547,7 @@ class InsuranceClaim(models.Model):
                             'valueString': claim.claim_explanation
                         })
                     
-                    _logger.info(claim_request)
+                    _logger.info("Claim Request=%s", claim_request)
 
                     if not claim_request['diagnosis']:
                         for line in claim.insurance_claim_line:
@@ -640,7 +642,7 @@ class InsuranceClaimLine(models.Model):
     imis_product_code = fields.Char(string="IMIS Product Code", change_default=True)
     product_qty = fields.Integer(string="Qty", requred=True)
     price_unit = fields.Float(string="Unit Price")
-    total_price = fields.Monetary(string="Total Price", currency_field="currency_id")
+    total_price = fields.Monetary(string="Total Price", currency_field="currency_id", compute="_compute_amount", store=True, readonly=True)
     currency_id = fields.Many2one(related='claim_id.currency_id', string="Currency", readonly=True, required=True)
     claim_sequence = fields.Integer(string="Claim Sequence", readonly=True)
     amount_approved = fields.Monetary(string='Approved amount', store=True)
@@ -651,6 +653,36 @@ class InsuranceClaimLine(models.Model):
     ], string='Claim Status', readonly=True, store=True)
     rejection_reason = fields.Text(string="Rejection Reason")
     quantity_approved = fields.Integer(string='Quantity Approved', store=True)
+
+    @api.onchange('product_id')
+    def _get_imis_product_code(self):
+        _logger.info("Inside _get_imis_product_code")
+        for line in self:
+            product_id = line.product_id.id
+            _logger.info("Product Id=%s", product_id)
+            if product_id:
+                insurance_product_mapper = line.env['insurance.odoo.product.map'].search([('odoo_product_id' , '=', product_id), ('is_active', '=', 't')])
+                _logger.info("Insurance Product Mapper:%s", insurance_product_mapper)
+                for ipm in insurance_product_mapper:
+                    _logger.info("ipm=%s", ipm)
+                    if ipm:
+                        line.imis_product = ipm.insurance_product_name
+                        line.imis_product_code = ipm.item_code
+                        line.price_unit = ipm.insurance_product_price
+                        _logger.info("IMIS Product:%s", line.imis_product)
+                        _logger.info("IMIS Product Code:%s", line.imis_product_code)
+                        _logger.info("Price Unit:%s", line.price_unit)
+                    else:
+                        raise UserError("This product has no mapping for insurance products")   
+        
+    @api.depends('product_qty', 'price_unit')  
+    def _compute_amount(self):
+        """
+        Compute the amounts of the Claim line Item.
+        """
+        _logger.info("Inside _compute_amount")
+        for line in self:
+            line.total_price = line.price_unit * line.product_qty
 
 class InsuranceClaimHistory(models.Model):
     _name = 'insurance.claim.history'

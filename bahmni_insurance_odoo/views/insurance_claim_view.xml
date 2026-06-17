@@ -27,8 +27,8 @@
                             <field name="rejection_reason" readonly="1"/>
                         </group>
                         <group>
-                            <field name="claimed_date"/>
-                            <field name="claim_manager_id"/>
+                            <field name="claimed_date" readonly="1"/>
+                            <field name="claim_manager_id" readonly="1"/>
                             <field name="external_visit_uuid"/>
                             <field name="generated_claim_code"/>
                             <field name="claim_explanation"/>
