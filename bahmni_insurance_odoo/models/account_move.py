@@ -1,5 +1,6 @@
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError, ValidationError
+from odoo.tools import float_round
 import base64
 import logging
 _logger = logging.getLogger(__name__)
@@ -29,7 +30,6 @@ class AccountMoveInherit(models.Model):
         '''
         for rec in self:
             if rec.move_type == "out_invoice" or rec.move_type == "out_refund":
-                _logger.info("If running")
                 _logger.info("Move Type:%s", rec.move_type)
                 payment_type = rec.move_payment_type
                 if payment_type:
@@ -54,7 +54,6 @@ class AccountMoveInherit(models.Model):
                         'type': 'ir.actions.act_window',
                     }
             else:
-                _logger.info("Else Running")
                 _logger.info("Move Type:%s", rec.move_type)
                 journal_id = rec.env['payment.journal.mapping'].search([
                     ('payment_type', '=', 'cash')
@@ -75,7 +74,81 @@ class AccountMoveInherit(models.Model):
                     'target': 'new',
                     'type': 'ir.actions.act_window',
                 }
+            
+    def action_post(self):
+        _logger.info("Inherit action_post")
+        for inv in self:
+            final_invoice_value = (inv.amount_total - inv.discount) + inv.round_off_amount
 
+            for move_line in inv.line_ids:
+                if move_line.display_type == 'payment_term':
+                    if inv.move_type == 'out_invoice':
+                        move_line.debit = final_invoice_value
+                        move_line.credit = 0
+                    if inv.move_type == 'out_refund':
+                        move_line.credit = final_invoice_value
+                        move_line.debit = 0
+
+            if inv.discount:
+                discount_account = inv.disc_acc_id
+                if not discount_account:
+                    raise UserError(_("Please configure a Discount Account on the Journal."))
+
+                _logger.info("Discount value for invoice %s: %s", inv.name, inv.discount)
+
+                existing_discount_line = inv.line_ids.filtered(
+                    lambda l: l.display_type == 'epd' and l.name == 'Discount' or l.name == 'Copayment'
+                )
+
+                if discount_account.name == 'Copayment':
+                    name = 'Copayment'
+                else:
+                    name = 'Discount'
+
+                if inv.move_type == 'out_refund':
+                    _logger.info("Move Type=%s", inv.move_type)
+                    if existing_discount_line:
+                        existing_discount_line.write({
+                            'debit': 0.0,
+                            'credit': inv.discount,
+                        })
+                    else:
+                        self.env['account.move.line'].create({
+                            'name': name,
+                            'company_id': inv.company_id.id,
+                            'account_id': discount_account.id,
+                            'partner_id': inv.partner_id.id,
+                            'move_id': inv.id,
+                            'quantity': 1.0,
+                            'price_unit': inv.discount,
+                            'credit': inv.discount,
+                            'debit': 0.0,
+                            'display_type': 'epd',
+                            'date_maturity': inv.invoice_date,
+                        })
+                else:
+                    _logger.info("Move Type=%s", inv.move_type)
+                    if existing_discount_line:
+                        existing_discount_line.write({
+                            'debit': inv.discount,
+                            'credit': 0.0,
+                        })
+                    else:
+                        self.env['account.move.line'].create({
+                            'name': name,
+                            'company_id': inv.company_id.id,
+                            'account_id': discount_account.id,
+                            'partner_id': inv.partner_id.id,
+                            'move_id': inv.id,
+                            'quantity': 1.0,
+                            'price_unit': inv.discount,
+                            'debit': inv.discount,
+                            'credit': 0.0,
+                            'display_type': 'epd',
+                            'date_maturity': inv.invoice_date,
+                        })
+        return super(AccountMoveInherit, self).action_post()
+            
     def action_generate_attachment(self, account_id, claim_id):
         _logger.info("Inside action_generate_attachment")
 
