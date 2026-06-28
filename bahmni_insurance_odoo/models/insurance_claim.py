@@ -409,7 +409,7 @@ class InsuranceClaim(models.Model):
             visit_response = requests.get(visit_url, headers=custom_headers, verify=False)
             if visit_response.status_code == 200:
                 data = visit_response.json()
-                _logger.debug("Data=%s", data)
+                _logger.info("Data=%s", data)
                 return data
         else:
             _logger.info(response.status_code)
@@ -631,6 +631,93 @@ class InsuranceClaim(models.Model):
                 _logger.info("////ELSE RUNNING/////")
                 claim.rejection_reason = claim_response_line['rejectedReason']
                 _logger.info("Rejection Reason:%s",claim.rejection_reason) 
+
+    def action_send_attachment(self):
+        # First API: Check username and password for authentication
+        login_url = "https://claimdoc.hib.gov.np/user/check.php"
+        user_credentials = self.env['hib.config.settings'].search([('active', '=', 't')])
+        username = ""
+        password = ""
+        for line in user_credentials:
+            username = line.username
+            password = line.password
+        login_data = {
+            "username": username,
+            "password": password
+        }
+        login_response = requests.post(login_url, json=login_data, verify=False)
+        _logger.info(login_response)
+        # Parse login response
+        if login_response.status_code == 200:
+            _logger.info("Login successful")
+            login_response_data = login_response.json()
+            _logger.info(login_response_data)
+            if login_response_data['status'] == 'success':
+                access_code = login_response_data['data']['access_code']
+                # Second API: Save the claim code and get the claim ID
+                _logger.info("SAVE CLAIM URL SEND")
+                save_claim_url = "https://claimdoc.hib.gov.np/claim/create.php"
+                claim_data = {
+                    "claim_code": self.claim_code,
+                    "access_code": access_code
+                }
+                _logger.info(claim_data)
+                claim_response = requests.post(save_claim_url, json=claim_data, verify=False)
+                _logger.info(claim_response)
+                # Parse claim response
+                if claim_response.status_code == 200:
+                    _logger.info("Claim Created Successfully")
+                    claim_response_data = claim_response.json()
+                    _logger.info(claim_response_data)
+                    if claim_response_data['status'] == 'success':
+                        _logger.info("*****ENTERED*****")
+                        claim_id = claim_response_data['data']['id']
+                        _logger.info(claim_id)
+                        # Third API: Upload multiple files
+                        files = []
+                        full_name = ""
+                        for line in self.attachment_ids:
+                            if line.id:
+                                _logger.info(line.id)
+                                _logger.info("Name:%s", line.name)
+                                _logger.info("************************************************")
+                                pdf_binary_value = line.datas
+                                # Ensure decoded_data is in bytes format
+                                _logger.info("Decoded Data")
+                                decoded_data = pdf_binary_value.decode('utf-8') #.decode = Decode the data from bytes to a UTF-8 encoded string
+                                full_name += line.name + " "
+                                files.append(decoded_data)
+                        
+                        if not files:
+                            raise UserError("Attachment cannot be empty")
+                        
+                        upload_data = {
+                            "file": files,
+                            "access_code": access_code,
+                            "name": full_name,
+                            "claim_id": claim_id
+                        }
+                        _logger.info(upload_data)
+                        upload_url = "https://claimdoc.hib.gov.np/claim/uploadMultiple.php"
+                        upload_response = requests.post(upload_url, json=upload_data, verify=False)
+                        # Parse upload response
+                        if upload_response.status_code == 200:
+                            upload_response_data = upload_response.json()
+                            _logger.info(upload_response_data)
+                            if upload_response_data['status'] == 'success':
+                                raise UserError("Files Uploaded Successfully")
+                            else:
+                                _logger.info("Upload Error:%s",upload_response_data['data'])
+                        else:
+                            _logger.info("Upload Error:%s", upload_response.text)
+                    else:
+                        _logger.info("Claim Error:%s", claim_response_data['data'])
+                else:
+                    _logger.info("Claim Error:%s", claim_response.text)
+            else:
+                _logger.info("Login Error:%s", login_response_data['data'])
+        else:
+            _logger.info("Login Error:%s", login_response.text)
         
 class InsuranceClaimLine(models.Model):
     _name = 'insurance.claim.line'
@@ -683,7 +770,6 @@ class InsuranceClaimLine(models.Model):
         _logger.info("Inside _compute_amount")
         for line in self:
             line.total_price = line.price_unit * line.product_qty
-
 class InsuranceClaimHistory(models.Model):
     _name = 'insurance.claim.history'
     _description = 'Insurance Claim History'

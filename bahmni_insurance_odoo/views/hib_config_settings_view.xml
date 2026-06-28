@@ -9,7 +9,6 @@
                     <group>
                         <field name="username"/>
                         <field name="password" password="True"/>
-                        <field name="remote_user"/>
                         <field name="active"/>
                     </group>
                 </sheet>
@@ -24,7 +23,6 @@
             <tree string="HIB Config Settings">
                 <field name="username"/>
                 <field name="password" password="True"/>
-                <field name="remote_user"/>
                 <field name="active"/>
             </tree>
         </field>

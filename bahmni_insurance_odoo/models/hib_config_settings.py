@@ -9,5 +9,4 @@ class Hib_Connect(models.Model):
 
     username = fields.Char(string="Username", help="Username of the health insurance board")
     password = fields.Char(string="Password", help="Password of the health insurance board")
-    remote_user = fields.Char(string="Remote User", help="Remote User of the health insurance board")
     active = fields.Boolean(string="Is Active")

@@ -13,6 +13,8 @@
                     <button name="action_refund" string="Refund" type="object" class="btn-primary"
                         attrs="{'invisible': [('state', 'not in', ['entered', 'checked'])]}" 
                         confirm="This action will refund products/services in IMIS and cannot be undone. Do you want to continue?"/>
+                    <button name="action_send_attachment" string="Send Attachment" type="object" class="btn-primary"
+                        attrs="{'invisible': [('state', 'in', ['draft'])]}"/>
                     <field name="state" statusbar_visible="draft, confirmed, submitted" widget="statusbar"/>
                 </header>
                 <sheet>
