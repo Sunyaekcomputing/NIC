@@ -545,6 +545,7 @@ class SaleOrderInherit(models.Model):
         for order in self:
             _logger.info("Sale Order Id:%s", order)
             self.env['insurance.claim']._create_claim(order)
+
 class SaleOrderLineInherit(models.Model):
     _inherit = 'sale.order.line'
     _description = 'Sale Order Line Inherit'

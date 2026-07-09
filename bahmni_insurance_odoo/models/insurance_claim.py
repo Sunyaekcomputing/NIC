@@ -45,7 +45,7 @@ class InsuranceClaim(models.Model):
     claim_comments = fields.Text(string="Claim Comments")
     rejection_reason = fields.Text(string="Rejection Reason")
     claimed_amount_total = fields.Monetary(string="Total Claimed Amount", store=True, readonly=True, compute="_claimed_amount_all")
-    code = fields.Integer(string="Critical Illness Code")
+    code = fields.Char(string="Critical Illness Code")
     amount_approved_total = fields.Monetary(string="Total Approved Amount", store=True, readonly=True, compute="_claimed_amount_all")
     generated_claim_code = fields.Char(string="Generated Claim Code", store=True, readonly=True)
     claim_explanation = fields.Text(string="Explanation", store=True)

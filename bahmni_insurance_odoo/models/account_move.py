@@ -6,12 +6,11 @@ import logging
 _logger = logging.getLogger(__name__)
 
 class AccountMoveInherit(models.Model):
-    _name = 'account.move'
     _inherit = 'account.move'
 
     nhis_number = fields.Char(string="NHIS Number")
     claim_id = fields.Char(string="Claim Id")
-    move_payment_type = fields.Selection(selection="_get_payment_type_data", string="Payment Type",  readonly=False)
+    move_payment_type = fields.Selection(selection="_get_payment_type_data", string="Payment Type")
     print_invoice_count = fields.Integer(string="Print Combine Count", default=0)
 
     @api.model

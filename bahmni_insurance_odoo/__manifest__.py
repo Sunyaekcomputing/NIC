@@ -7,7 +7,7 @@
     """,
     'author': "Rijan Maharjan",
     'website': "",
-    'depends': ['sale', 'stock', 'purchase', 'bahmni_sale', 'account', 'base_accounting_kit'],
+    'depends': ['sale', 'stock', 'purchase', 'bahmni_sale', 'account', 'base_accounting_kit', 'bahmni_account'],
     'data': [
         'security/insurance_security.xml',
         'security/ir.model.access.csv',

@@ -33,6 +33,7 @@
                             <field name="claim_manager_id" readonly="1"/>
                             <field name="external_visit_uuid"/>
                             <field name="generated_claim_code"/>
+                            <field name="code"/>
                             <field name="claim_explanation"/>
                         </group>
                     </group>
