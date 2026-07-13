@@ -101,6 +101,7 @@ class SaleOrderInherit(models.Model):
 
             for sale_order_line in sale_order.order_line:
                 product_id = sale_order_line.product_id
+                lot_id = sale_order_line.lot_id
                 if sale_order.payment_type == "insurance":
                     if self.nhis_number:
                         insurance_cost = self._get_insurance_cost(product_id.id)
@@ -127,7 +128,7 @@ class SaleOrderInherit(models.Model):
                 else:
                     sale_order_line.update({
                         'payment_type': sale_order.payment_type,
-                        'price_unit': product_id.lst_price
+                        'price_unit': lot_id.sale_price
                     })
         if has_error == True:
             return {
@@ -287,6 +288,10 @@ class SaleOrderInherit(models.Model):
         :rtype: bool
         :raise: UserError if trying to confirm locked or cancelled SO's
         """
+        for order in self:
+            if order.amount_total == 0:
+                raise UserError(_("Cannot confirm sale order '%s' because its total amount is 0.") % order.name)
+            
         if self._get_forbidden_state_confirm() & set(self.mapped('state')):
             raise UserError(_(
                 "It is not allowed to confirm an order in the following states: %s",
