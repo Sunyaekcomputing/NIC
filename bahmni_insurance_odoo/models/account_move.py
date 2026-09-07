@@ -1,0 +1,233 @@
+from odoo import api, fields, models, _
+from odoo.exceptions import UserError, ValidationError
+from odoo.tools import float_round
+import base64
+import logging
+_logger = logging.getLogger(__name__)
+
+class AccountMoveInherit(models.Model):
+    _inherit = 'account.move'
+
+    nhis_number = fields.Char(string="NHIS Number")
+    claim_id = fields.Char(string="Claim Id")
+    move_payment_type = fields.Selection(selection="_get_payment_type_data", string="Payment Type")
+    print_invoice_count = fields.Integer(string="Print Combine Count", default=0)
+
+    @api.model
+    def _get_payment_type_data(self):
+        returnData = []
+        payment_type_ids = self.env['payment.types'].search([])
+        if payment_type_ids:
+            for pt in payment_type_ids:
+                data = payment_type_ids.browse(pt.id)
+                returnData.append((data.key, data.value))
+        return returnData
+
+    def action_register_payment(self):
+        ''' Open the account.payment.register wizard to pay the selected journal entries.
+        :return: An action opening the account.payment.register wizard.
+        '''
+        for rec in self:
+            if rec.move_type == "out_invoice" or rec.move_type == "out_refund":
+                _logger.info("Move Type:%s", rec.move_type)
+                payment_type = rec.move_payment_type
+                if payment_type:
+                    _logger.info("Payment Type:%s", payment_type)
+                    journal_id = rec.env['payment.journal.mapping'].search([
+                        ('payment_type', '=', payment_type)
+                    ]).journal_id.id
+                    _logger.info("Journal Id:%s", journal_id)
+                    if not journal_id:
+                        raise UserError("Please define a journal for this company")
+            
+                    return {
+                        'name': _('Register Payment'),
+                        'res_model': 'account.payment.register',
+                        'view_mode': 'form',
+                        'context': {
+                            'active_model': 'account.move',
+                            'active_ids': self.ids,
+                            'default_journal_id': journal_id
+                        },
+                        'target': 'new',
+                        'type': 'ir.actions.act_window',
+                    }
+            else:
+                _logger.info("Move Type:%s", rec.move_type)
+                journal_id = rec.env['payment.journal.mapping'].search([
+                    ('payment_type', '=', 'cash')
+                    ]).journal_id.id
+                _logger.info("Journal Id:%s", journal_id)
+                if not journal_id:
+                    raise UserError("Please define a journal for this company")
+            
+                return {
+                    'name': _('Register Payment'),
+                    'res_model': 'account.payment.register',
+                    'view_mode': 'form',
+                    'context': {
+                        'active_model': 'account.move',
+                        'active_ids': self.ids,
+                        'default_journal_id': journal_id
+                    },
+                    'target': 'new',
+                    'type': 'ir.actions.act_window',
+                }
+            
+    def action_post(self):
+        _logger.info("Inherit action_post")
+        for inv in self:
+            final_invoice_value = (inv.amount_total - inv.discount) + inv.round_off_amount
+
+            for move_line in inv.line_ids:
+                if move_line.display_type == 'payment_term':
+                    if inv.move_type == 'out_invoice':
+                        move_line.debit = final_invoice_value
+                        move_line.credit = 0
+                    if inv.move_type == 'out_refund':
+                        move_line.credit = final_invoice_value
+                        move_line.debit = 0
+
+            if inv.discount:
+                discount_account = inv.disc_acc_id
+                if not discount_account:
+                    raise UserError(_("Please configure a Discount Account on the Journal."))
+
+                _logger.info("Discount value for invoice %s: %s", inv.name, inv.discount)
+
+                existing_discount_line = inv.line_ids.filtered(
+                    lambda l: l.display_type == 'epd' and l.name == 'Discount' or l.name == 'Copayment'
+                )
+
+                if discount_account.name == 'Copayment':
+                    name = 'Copayment'
+                else:
+                    name = 'Discount'
+
+                if inv.move_type == 'out_refund':
+                    _logger.info("Move Type=%s", inv.move_type)
+                    if existing_discount_line:
+                        existing_discount_line.write({
+                            'debit': 0.0,
+                            'credit': inv.discount,
+                        })
+                    else:
+                        self.env['account.move.line'].create({
+                            'name': name,
+                            'company_id': inv.company_id.id,
+                            'account_id': discount_account.id,
+                            'partner_id': inv.partner_id.id,
+                            'move_id': inv.id,
+                            'quantity': 1.0,
+                            'price_unit': inv.discount,
+                            'credit': inv.discount,
+                            'debit': 0.0,
+                            'display_type': 'epd',
+                            'date_maturity': inv.invoice_date,
+                        })
+                else:
+                    _logger.info("Move Type=%s", inv.move_type)
+                    if existing_discount_line:
+                        existing_discount_line.write({
+                            'debit': inv.discount,
+                            'credit': 0.0,
+                        })
+                    else:
+                        self.env['account.move.line'].create({
+                            'name': name,
+                            'company_id': inv.company_id.id,
+                            'account_id': discount_account.id,
+                            'partner_id': inv.partner_id.id,
+                            'move_id': inv.id,
+                            'quantity': 1.0,
+                            'price_unit': inv.discount,
+                            'debit': inv.discount,
+                            'credit': 0.0,
+                            'display_type': 'epd',
+                            'date_maturity': inv.invoice_date,
+                        })
+        return super(AccountMoveInherit, self).action_post()
+            
+    def action_generate_attachment(self, account_id, claim_id):
+        _logger.info("Inside action_generate_attachment")
+
+        report_name = 'account.account_invoices' #default odoo report
+
+        pdf = self.env['ir.actions.report']._render_qweb_pdf(
+            report_name, 
+            account_id.ids
+        )[0]
+
+        b64_pdf = base64.b64encode(pdf)
+
+        # Attachment Name
+        attachment_name = account_id.name
+        _logger.info("Attachment Name:%s", attachment_name)
+
+        # Patient Information
+        patient_information = f"{account_id.partner_id.name} {account_id.payment_reference}"
+        _logger.info("Patient Info:%s", patient_information)
+
+        # Create Attachment
+        attachment_value = {
+            'name': patient_information,
+            'type': 'binary',
+            'datas': b64_pdf,
+            'store_fname': f"{attachment_name}.pdf",
+            "res_model": account_id._name,
+            "res_id": account_id.id,
+            "mimetype": 'application/pdf'
+        }
+
+        attachment = self.env['ir.attachment'].create(attachment_value)
+  
+        _logger.info("Created Attachment Id:%s", attachment.id)
+
+        # Add to insurance claim line
+        claim = self.env['insurance.claim'].browse(claim_id.id)
+        _logger.info("Claim Id:%s", claim)
+        claim.write({
+            'attachment_ids': [(4, attachment.id)]
+        })
+        _logger.info("Attachment added to the insurance claim line")        
+
+    def print_custom_invoice(self):
+        _logger.info("*****Inside print report*****")
+        self.ensure_one()
+        return self.env.ref('bahmni_insurance_odoo.action_report_account_invoice').report_action(self)
+    
+    def change_size_page(self, items, combined="None"):
+        base_format = self.env['report.paperformat'].browse(7)
+        _logger.info("Base Format:%s", base_format)
+
+        if combined == "combines":
+            line_count = self.env['account.move.line'].search_count([
+                ('move_id.invoice_origin', '=', self.invoice_origin)
+            ])
+            _logger.info("Line Count:%s", line_count)
+            height = 350 + (line_count * 12)
+        else:
+            height = 220 + (len(items) * 12)
+
+        dynamic_format = base_format.copy({
+            'name': 'Dynamic Height Format',
+            'format': 'custom',
+            'page_height': height
+        })
+
+        return dynamic_format.id
+ 
+    def count_invoice_print(self):
+        for count in self:
+            count.print_invoice_count += 1
+            
+    def adjusted_count_invoice_print(self):
+        if self.print_invoice_count > 1:
+            return self.print_invoice_count - 1
+        else:
+            return self.print_invoice_count
+
+
+
+        
+  

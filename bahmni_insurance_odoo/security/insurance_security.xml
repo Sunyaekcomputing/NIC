@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="module_insurance_category" model="ir.module.category">
+        <field name="name">Insurance</field>
+        <field name="description">User access level to process claims through odoo</field>
+        <field name="sequence">10</field>
+    </record>
+    <!--Internal User + any specific rights you assign to group_insurance_claim_user.-->
+    <record id="group_insurance_claim_user" model="res.groups">
+        <field name="name">User</field>
+        <field name="category_id" ref="module_insurance_category"></field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"></field><!--Internal odoo user access-->
+        <field name="users" eval="[(4, ref('base.user_root'))]"></field><!--Adds the Administrator (base.user_root) to this group automatically.-->
+    </record>
+    <!--User + extra rights you assign to group_insurance_claim_manager.-->
+    <record id="group_insurance_claim_manager" model="res.groups">
+        <field name="name">Manager</field>
+        <field name="category_id" ref="module_insurance_category"></field>
+        <field name="implied_ids" eval="[(4, ref('group_insurance_claim_user'))]"></field>
+    </record>
+</odoo>

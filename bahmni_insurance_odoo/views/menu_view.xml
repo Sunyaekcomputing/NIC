@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_bahmni_insurance_odoo" name="Bahmni Insurance Odoo" sequence="10"/>
+    <menuitem id="menu_emr" name="EMR" sequence="10" parent="menu_bahmni_insurance_odoo"/>
+    <menuitem id="menu_insurance_claims" name="Insurance Claims" sequence="10" parent="menu_emr"/>
+    <menuitem id="menu_emr_configuration" name="EMR Configuration" sequence="11" parent="menu_emr"/>
+</odoo>

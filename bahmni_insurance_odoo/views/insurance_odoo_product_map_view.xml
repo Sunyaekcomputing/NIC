@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo> 
+    <record id="insurance_odoo_product_map_form_view" model="ir.ui.view">
+        <field name="name">Insurance Odoo Product Map Form View</field>
+        <field name="model">insurance.odoo.product.map</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="item_code"/>
+                        <field name="insurance_product_name"/>
+                        <field name="insurance_product_price"/>
+                        <field name="odoo_product_id"/>
+                        <field name="valid_from"/>
+                        <field name="valid_to"/>
+                        <field name="cap_validation"/>
+                        <field name="capping_number"/>
+                        <field name="is_active"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="insurance_odoo_product_map_tree_view" model="ir.ui.view">
+        <field name="name">Insurance Odoo Product Map Tree View</field>
+        <field name="model">insurance.odoo.product.map</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="item_code"/>
+                <field name="insurance_product_name"/>
+                <field name="insurance_product_price"/>
+                <field name="odoo_product_id"/>
+                <field name="cap_validation"/>
+                <field name="capping_number"/>
+                <field name="is_active"/>           
+            </tree>
+        </field>
+    </record>
+    <record id="action_insurance_odoo_product_map" model="ir.actions.act_window">
+        <field name="name">Insurance Odoo Product Map</field>
+        <field name="res_model">insurance.odoo.product.map</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="insurance_odoo_product_map_tree_view"></field>
+    </record>
+
+    <menuitem id="menu_insurance_odoo_product_map" name="Insurance Odoo Product Map" sequence="10" parent="menu_emr_configuration" action="action_insurance_odoo_product_map"/>
+
+</odoo>

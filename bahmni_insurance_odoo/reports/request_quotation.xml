@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data>
+        <template id="request_for_quotation_inherit" inherit_id="purchase.report_purchasequotation_document">
+            <xpath expr="//t[@t-call='web.external_layout']" position="replace">
+                <t t-call="web.basic_layout">
+                    <t t-set="o" t-value="o.with_context(lang=o.partner_id.lang)"/>
+                    <div class="page">
+                        <div class="row">
+                            <div class="text-center">
+                                <div class="main-header">
+                                    <h6>Government of Gandaki Province</h6>
+                                    <h6>Ministry of Health</h6>
+                                    <h6>Provincial Health Directorate</h6>
+                                </div>
+                                <div class="sub-header">
+                                    <strong> 
+                                        गण्डकी प्रदेश सरकार <br></br>
+                                        सामाजिक बिकाश मन्त्रालय <br></br>
+                                        स्वास्थ्य निर्देशनालय <br> </br>
+                                        जिल्ला अस्पताल पर्बत <br> </br>
+                                        माग फाराम
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-4">
+                            <div class="col-6">
+                                <strong>Shipping Address:<span t-field="o.picking_type_id.warehouse_id.name"></span></strong>
+                            </div>
+                            <div class="col-6" style="text-align: right;">
+                                <strong>Company Name:<span t-field="o.partner_id.name"></span></strong>
+                            </div>
+                        </div>
+
+                        <div class="oe_structure"/>
+
+                        <h2 class="mt-4" style="font-size: 18px;">Request for Quotation <span t-field="o.name"/></h2>
+                        
+                        <div class="row">
+                            <div class="col-6">
+                                <table style="width:100%; border-collapse:collapse; font-size:16px; border:1px solid white;">
+                                    <tr> 
+                                        <td>श्री प्रमुख</td>
+                                    </tr> 
+                                    <tr>
+                                        <td>भण्डार शाखा</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-6" style="font-size: 16px;">
+                                <table style="width:100%; border-collapse:collapse; font-size:16px; border:1px solid white;">
+                                    <tr> 
+                                        <td style="text-align:right;">मा.ले.खा.प.फा.न.: ४०१</td>
+                                    </tr> 
+                                    <tr>
+                                        <td style="text-align:right;">साबिकको फाराम न. : ५१</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    
+                        <table class="table table-sm mt-4">
+                            <thead style="display: table-row-group">
+                                <tr>
+                                    <th name="th_description"><strong>Description</strong></th>
+                                    <th name="th_expected_date" class="text-center"><strong>Expected Date</strong></th>
+                                    <th name="th_quantity" class="text-end"><strong>Qty</strong></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="o.order_line" t-as="order_line">
+                                    <tr t-att-class="'bg-200 fw-bold o_line_section' if order_line.display_type == 'line_section' else 'fst-italic o_line_note' if order_line.display_type == 'line_note' else ''">
+                                        <t t-if="not order_line.display_type">
+                                            <td id="product">
+                                                <span t-field="order_line.name"/>
+                                            </td>
+                                            <td class="text-center">
+                                                <span t-field="order_line.date_planned"/>
+                                            </td>
+                                            <td class="text-end">
+                                                <span t-field="order_line.product_qty"/>
+                                                <span t-field="order_line.product_uom" groups="uom.group_uom"/>
+                                            </td>
+                                        </t>
+                                        <t t-else="">
+                                            <td colspan="99" id="section">
+                                                <span t-field="order_line.name"/>
+                                            </td>
+                                        </t>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                        <p t-field="o.notes" class="mt-4"/>
+                        <div class="oe_structure"/>
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            <table style="width:100%; border-collapse:collapse; font-size:16px; border:1px solid white;">
+                                <tr> 
+                                    <td>माग गर्नेको दस्तखत:</td>
+                                </tr> 
+                                <tr> 
+                                    <td> नाम: .............................</td>
+                                </tr> 
+                                <tr> 
+                                    <td> मिति : .............................</td>
+                                </tr> 
+                                <tr> 
+                                    <td> प्रयोजन : .............................</td>
+                                </tr> 
+                                <tr> 
+                                    <td> मिति  : .............................</td>
+                                </tr> 
+                                <tr> 
+                                    <td> जिन्सी खातामा चढाउनेको दस्तखत :</td>
+                                </tr> 
+                                <tr> 
+                                    <td> मिति: .............................</td>
+                                </tr> 
+                            </table>
+                        </div>
+                        <div class="col-6">
+                            <table style="width:100%; border-collapse:collapse; font-size:16px; border:1px solid white;">
+                                <tr> 
+                                    <td>क) बजारबाट खरिद गरिदिनु:</td>
+                                </tr> 
+                                <tr> 
+                                    <td>ख) मौज्दात बाट दिनु :</td>
+                                </tr> 
+                                <tr> 
+                                    <td>आदेश दिनेको दस्तखत:</td>
+                                </tr> 
+                                <tr> 
+                                    <td> मिति : .............................</td>
+                                </tr> 
+                                <tr> 
+                                    <td>मालसमान बुझिलिनेको दस्तखत:</td>
+                                </tr> 
+                                <tr> 
+                                    <td> मिति: .............................</td>
+                                </tr> 
+                            </table>
+                        </div>
+                    </div>
+                    <style>
+                        @font-face {
+                            font-family: 'Lohit Devanagari';
+                            src: url('/usr/share/fonts/truetype/lohit-devanagari/Lohit-Devanagari.ttf') format('truetype');
+                        }
+                        .text-center {
+                            text-align: center;
+                        }
+                        .main-header h6 {
+                            font-weight: bold;
+                        }
+                    </style>
+                </t>
+            </xpath>
+        </template>
+    </data>
+</odoo>

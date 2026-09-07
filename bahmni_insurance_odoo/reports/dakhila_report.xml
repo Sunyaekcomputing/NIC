@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data>
+        <template id="report_dakhila">
+            <t t-call="web.html_container">
+                <t t-foreach="docs" t-as="doc">
+                    <t t-call="web.basic_layout">
+                        <div class="page">
+                            <div class="img-class">
+                                <img t-att-src="'/web/image/res.company/%s/logo_web' % doc.company_id.id" 
+                                    style="width:80px; height:66px"/>
+                            </div>
+
+                            <div class="pradesh">
+                                <h6><b>प्रदेश सरकार</b></h6>
+                                <h6><b>स्वास्थ्य तथा जनसंख्या मन्त्रालय</b></h6>
+                                <h6><b>स्वास्थ्य निर्देशनालय</b></h6>
+                                <h5><b>प्रदेश अस्पताल,पुतलीबजार,स्याङ्जा</b></h5>
+                                <h6><b>कार्यालय कोड नं: ३५००९४३०१४</b></h6>
+                                <h5><u><b>दाखिला प्रतिवेदन फाराम</b></u></h5>  
+                            </div>
+                              
+                            <div class="pharam">
+                                <p>म.ले.प.फारम नं: ४०३</p>
+                            </div>
+
+                            <div class="mt-4" style="float:right; font-size:14px;">
+                                <p>दाखिला मिति: <span t-esc="doc.purchase_id.create_date.strftime('%Y-%m-%d')"></span></p>
+                                <p>दाखिला प्रतिवेदन नं: <span t-esc="doc.purchase_id.name"></span></p>
+                            </div>
+
+                            <table class='table main-table' cellspacing="0" cellpadding="0">
+                                <tr class="text-center" style="font-weight:bold">
+                                    <th t-att-rowspan="2">क्र.सं.</th>
+                                    <th t-att-rowspan="2">खरिद आदेश / हस्तान्तरण फारम नं.</th>
+                                    <th t-att-rowspan="2">जिन्सी वर्गीकरण संकेत नं.</th>
+                                    <th t-att-rowspan="2">जिन्सी खाता पाना नं.</th>
+                                    <th t-att-rowspan="2">सामानको नाम</th>
+                                    <th t-att-rowspan="2">स्पेसिफिकेसन</th>
+                                    <th t-att-rowspan="2">सामानको पहिचान</th>
+                                    <th t-att-rowspan="2">मोडल नं.</th>
+                                    <th t-att-colspan="8">मूल्य (बिल बिजक अनुसार)</th>
+                                    <th t-att-rowspan="2">कैफियत</th>
+                                </tr>
+                                <tr class="text-center" style="font-weight:bold;">
+                                    <th>एकाई</th>
+                                    <th>परिमाण</th>
+                                    <th>दर</th>
+                                    <th>जम्मा मु.अ.कर बाहेक</th>
+                                    <th>मु.अ.कर</th>
+                                    <th>सामानको जम्मा मूल्य </th>
+                                    <th>अन्य खर्च</th>
+                                    <th>अन्य खर्चसमेत जम्मा रकम</th>
+                                </tr>
+                                <t t-set="serial_number" t-value="1"/>
+                                <t t-set="price_subtotal" t-value="1"/>
+                                <t t-set="tax_amount" t-value="0"/>
+                                <t t-set="total_price_after_tax" t-value="0"/>   
+                                <t t-set="total_price_after_expense" t-value="0"/>   
+                                <t t-set="total_price" t-value="0"/>   
+                                <tr>
+                                    <t t-if="doc">
+                                        <t t-foreach="doc.move_line_ids" t-as="d">
+                                            <tr class="text-center">
+                                                <td t-esc="serial_number"></td>
+                                                <td t-esc="d.move_id.purchase_line_id.order_id.name"></td>
+                                                <td t-esc="407"></td>
+                                                <td t-esc="d.move_id.product_id.id"></td>
+                                                <td t-esc="d.move_id.product_id.name"></td>
+                                                <td t-esc="d.move_id.product_id.name"></td>
+                                                <td t-esc="d.move_id.product_id.drug">n/a</td>
+                                                <td t-esc="d.lot_id.name"></td>
+                                                <td t-esc="d.move_id.product_id.categ_id.name">n/a</td>
+                                                <td t-esc="d.move_id.product_qty"></td>
+                                                <td t-esc="d.move_id.purchase_line_id.price_unit"></td>
+                                                <t t-set="price_subtotal" t-value = "price_subtotal * d.move_id.product_qty * d.move_id.purchase_line_id.price_unit"></t>
+                                                <td t-esc="price_subtotal"></td>
+                                                <t t-set="tax_amount" t-value = "tax_amount + (d.move_id.purchase_line_id.taxes_id.amount/100) * price_subtotal"></t>
+                                                <td t-esc="tax_amount"></td>
+                                                <t t-set="total_price_after_tax" t-value="total_price_after_tax + price_subtotal + tax_amount"></t> 
+                                                <td t-esc="total_price_after_tax"></td>
+                                                <td>0.0</td>
+                                                <t t-set="total_price_after_expense" t-value="total_price_after_expense + total_price_after_tax"></t> 
+                                                <td t-esc="total_price_after_expense"></td>
+                                                <td></td>
+                                                <t t-set="total_price" t-value = "total_price + total_price_after_expense"></t>  
+                                                <t t-set="serial_number" t-value = "serial_number + 1"></t>
+                                                <t t-set="price_subtotal" t-value = "1"></t>
+                                                <t t-set="tax_amount" t-value = "0"></t>
+                                                <t t-set="total_price_after_tax" t-value="0"></t>  
+                                                <t t-set="total_price_after_expense" t-value="0"></t>   
+                                            </tr>
+                                        </t>
+                                    </t>
+                                </tr> 
+                                <tr class="text-center">
+                                    <td t-att-colspan="15" style="text-align:right;">जम्मा:</td>
+                                    <td t-att-colspan="1" t-esc="total_price"></td>
+                                    <td></td>
+                                </tr> 
+                            </table>
+
+                            <div class="tclass">
+                                <p>उपयुक्त अनुसार दाखिला प्रतिवेदन तयार गर्ने, जाच गर्ने र स्वीकृत गर्ने:</p>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-4">
+                                    <table class="foot-table">
+                                        <tr>
+                                            <td>फाॅटवालाको दस्तखत:</td>
+                                        </tr>
+                                        <tr>
+                                            <td>नाम: <t t-esc="doc.purchase_id.create_uid.name"></t></td>
+                                        </tr>  
+                                        <tr>
+                                            <td>पद:</td>
+                                        </tr>  
+                                        <tr>
+                                            <td>मिति:</td>
+                                        </tr>  
+                                    </table>
+                                </div>
+                                <div class="col-4">
+                                    <table class="foot-table">
+                                        <tr>
+                                            <td>भण्डार प्रमुखको दस्तखत:</td>
+                                        </tr>
+                                        <tr>
+                                            <td>नाम:</td>
+                                        </tr>  
+                                        <tr>
+                                            <td>पद:</td>
+                                        </tr>  
+                                        <tr>
+                                            <td>मिति:</td>
+                                        </tr>  
+                                    </table>
+                                </div>
+                                <div class="col-4">
+                                    <table class="foot-table">
+                                        <tr>
+                                            <td>प्रमाणित गर्नेको दस्तखत:</td>
+                                        </tr>
+                                        <tr>
+                                            <td>नाम:</td>
+                                        </tr>  
+                                        <tr>
+                                            <td>पद:</td>
+                                        </tr>  
+                                        <tr>
+                                            <td>मिति:</td>
+                                        </tr>  
+                                    </table>
+                                </div>
+                            </div>
+                            <style>
+                                .main-table th, .main-table td {
+                                    font-size: 14px;
+                                    text-align: center;
+                                    padding: 5px;
+                                }
+
+                                .text-center th, .text-center td{
+                                    border: 1px solid black;
+                                }
+
+                                .pradesh {
+                                    font-weight: bold;
+                                    text-align: center;
+                                }
+                                
+                                .pharam {
+                                    float: right;
+                                    display: block;
+                                }
+                    
+                                .pharam p {  
+                                    position: relative; 
+                                    bottom: 180px;
+                                    font-weight: bold;
+                                }
+
+                                .tclass {
+                                    font-size: 14px;
+                                }
+                            
+                                .foot-table {
+                                    width: 100%;
+                                    border: 1px solid white;
+                                }
+
+                                .foot-table td {
+                                    font-size: 14px;
+                                    padding: 5px;
+                                }
+
+                                .img-class {
+                                    position: relative;
+                                    top: 70px;
+                                }
+                                
+                                .page {
+                                    position: absolute;
+                                    top: -60px;
+                                }
+                            </style>
+                        </div>
+                    </t>
+                </t>
+            </t>
+        </template>
+    </data>
+</odoo>
