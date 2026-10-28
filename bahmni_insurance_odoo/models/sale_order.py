@@ -11,6 +11,13 @@ class SaleOrderInherit(models.Model):
     _inherit = 'sale.order'
     _description = 'Inherit Sale Order Module'
 
+    critical_illness_code = fields.Selection([
+    ('Cancer', 'Cancer'), ('KIDDS', 'Kidney Disease'), ('HRTDS', 'Heart Disease'),
+    ('HEDDS', 'Head Injury'), ('SPNINJ', 'Spinal Injury'),
+    ('SKCLANM', 'Sickle Cell Anemia'), ('PRKTN', 'Parkinsonism'),
+    ('ALZMR', 'Alzheimer'),
+    ], string="Critical Illness")
+
     nhis_number = fields.Char(string="NHIS Number", compute="_get_insurance_details")
     insurance_status = fields.Boolean(string="Insurance Status", default=False, compute="_get_insurance_details")
     payment_type = fields.Selection(selection="_get_payment_type_data", string="Payment Type", default="cash")
