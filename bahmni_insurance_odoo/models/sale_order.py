@@ -392,6 +392,9 @@ class SaleOrderInherit(models.Model):
                 if self.is_apply_copayment_checked == 1:
                     _logger.info("Apply Copayment Button Clicked:%s", self.is_apply_copayment_checked)
                     for line in self.order_line:
+                        if self.critical_illness_code:
+                            _logger.info("Critical illness %s selected, skipping cap validation", self.critical_illness_code)
+                            continue
                         if line.product_id:
                             _logger.info("Product Name:%s", line.product_id.name)
                             imis_mapped_row = self.env['insurance.odoo.product.map'].search([
