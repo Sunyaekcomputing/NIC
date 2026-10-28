@@ -121,7 +121,8 @@ class InsuranceClaim(models.Model):
                 'external_visit_uuid': visit_uuid,
                 'visit_type': sale_order.visit_type,
                 'care_setting': sale_order.care_setting,
-                'nmc_number': nmc_value
+                'nmc_number': nmc_value,
+                'code': sale_order.critical_illness_code or False,
             }
             _logger.info("Claim:%s", claim)
             claim_in_db = self.env['insurance.claim'].search([('external_visit_uuid', '=', visit_uuid), ('care_setting', '=', 'ipd'), ('state', '=', 'draft')])
@@ -139,6 +140,8 @@ class InsuranceClaim(models.Model):
             claim_in_db.update({
                 'sale_orders': claim_in_db.sale_orders + sale_order
             })
+            if sale_order.critical_illness_code:
+                claim_in_db.code = sale_order.critical_illness_code
             _logger.info("New Claim with added sale order:%s", claim_in_db)
 
             try:
@@ -807,6 +810,3 @@ class InsuranceClaimHistory(models.Model):
         }
         _logger.info(claim_history)
         return self.env['insurance.claim.history'].create(claim_history)
-
-
-
