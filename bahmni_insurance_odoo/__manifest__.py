@@ -13,6 +13,7 @@
         'security/ir.model.access.csv',
         # 'data/ir_cron.xml',
         'views/menu_view.xml',
+        'views/sale_order_critical_illness.xml',
         'views/sale_order_view.xml',
         'views/insurance_claim_view.xml',
         'views/payment_type_view.xml',
